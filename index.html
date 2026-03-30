@@ -3,166 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neural Tickets PRO</title>
+    <title>Neural Oracle PRO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
     
-    <!-- Meta tagy pre mobilnú apku -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#050505">
-
-    <!-- Firebase SDK -->
+    <!-- FIREBASE SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
     <style>
         :root {
-            --bg-dark: #050505;
-            --neon-purple: #bc13fe;
+            --bg-deep: #0a0118; 
+            --neon-magenta: #ff00ff;
             --neon-cyan: #00f2ff;
-            --neon-yellow: #fefe33;
-            --neon-green: #00ff41;
-            --neon-orange: #ff8c00;
-            --text-gray: #888888;
+            --neon-yellow: #ffea00;
+            --neon-green: #00ff9f;
+            --neon-purple: #bc13fe;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        body { background: #000; color: #fff; font-family: 'Orbitron', sans-serif; margin: 0; overflow: hidden; }
 
-        body {
-            background-color: var(--bg-dark);
-            background-image: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
-            color: white;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
+        .app-shell {
+            width: 100%; max-width: 450px; height: 100vh; margin: auto;
+            background: var(--bg-deep); position: relative; overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* Hlavička */
-        .app-header {
-            text-align: center;
-            padding: 50px 20px 10px;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-gray);
-            text-transform: uppercase;
-            letter-spacing: 3px;
+        /* SKENER */
+        .scanner-line {
+            position: absolute; width: 100%; height: 2px; background: var(--neon-cyan);
+            box-shadow: 0 0 15px var(--neon-cyan); z-index: 9999; pointer-events: none;
+            opacity: 0.3; animation: scanMove 4s linear infinite;
+        }
+        @keyframes scanMove { 0% { top: -5%; } 100% { top: 105%; } }
+
+        .nebula {
+            position: absolute; width: 200%; height: 200%; top: -50%; left: -50%;
+            background: radial-gradient(circle at center, rgba(188, 19, 254, 0.1) 0%, transparent 40%);
+            animation: nebulaMove 15s infinite alternate; z-index: 0; filter: blur(50px);
+        }
+        @keyframes nebulaMove { from { transform: translate(-5%, -5%); } to { transform: translate(5%, 5%); } }
+
+        .main-container { position: relative; z-index: 10; height: calc(100vh - 80px); overflow-y: auto; padding: 20px; }
+        .page-section { display: none; }
+        .page-section.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .cyber-card {
+            background: rgba(255, 255, 255, 0.03); border-radius: 15px; padding: 15px;
+            margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(5px);
         }
 
-        .section-title {
-            padding: 10px 25px;
-            font-size: 28px;
-            font-weight: 800;
-            margin-bottom: 20px;
-        }
+        .match-row { display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
+        .match-row:active { transform: scale(0.97); background: rgba(255,255,255,0.08); }
+        .match-info b { font-size: 13px; display: block; margin-bottom: 3px; }
+        .match-info span { font-size: 9px; opacity: 0.5; color: var(--neon-cyan); }
+        .prob-badge { border: 1px solid var(--neon-green); color: var(--neon-green); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 900; }
 
-        /* Karty zápasov */
-        .matches-list { padding: 0 20px 100px; }
-
-        .match-card {
-            background: rgba(15, 15, 20, 0.95);
-            border-radius: 20px;
-            margin-bottom: 20px;
-            padding: 20px;
-            border: 2px solid transparent;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            transition: 0.2s;
-        }
-        .match-card:active { transform: scale(0.97); }
-
-        /* Dynamické farby okrajov */
-        .border-purple { border-color: var(--neon-purple); box-shadow: 0 0 15px rgba(188, 19, 254, 0.3); }
-        .border-cyan { border-color: var(--neon-cyan); box-shadow: 0 0 15px rgba(0, 242, 255, 0.3); }
-
-        .league-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255,255,255,0.08);
-            padding: 5px 12px;
-            border-radius: 8px;
-            width: fit-content;
-            margin-bottom: 15px;
-        }
-        .league-name { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #fff; }
-
-        .teams-row {
-            font-size: 22px;
-            font-weight: 700;
-            text-align: center;
-            line-height: 1.2;
-        }
-        .teams-row span { color: var(--text-gray); font-weight: 300; margin: 0 8px; font-size: 18px; }
-
-        /* Detail obrazovka */
+        /* DETAIL PANEL */
         #detail-view {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-dark);
-            background-image: linear-gradient(rgba(0,0,0,0.9), rgba(0,0,0,0.9)), url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
-            z-index: 1000;
-            display: none;
+            position: absolute; inset: 0; background: #060112; z-index: 10000;
+            display: none; padding: 20px; transform: translateY(100%); transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             overflow-y: auto;
-            padding: 60px 20px;
+        }
+        #detail-view.open { display: block; transform: translateY(0); }
+
+        .stats-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; margin-top: 20px; }
+        .team-logo {
+            width: 55px; height: 55px; background: #000; border-radius: 50%;
+            border: 2px solid var(--neon-cyan); display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 900; position: relative; overflow: hidden; color: var(--neon-cyan);
+        }
+        .team-logo::after {
+            content: ""; position: absolute; top: -100%; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(transparent, var(--neon-cyan), transparent);
+            animation: scanLogo 2s infinite; opacity: 0.4;
+        }
+        @keyframes scanLogo { 0% { top: -100%; } 100% { top: 100%; } }
+
+        .form-bars { display: flex; gap: 4px; height: 30px; align-items: flex-end; }
+        .bar { width: 6px; background: var(--neon-cyan); border-radius: 1px; opacity: 0.6; }
+
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+        .stat-square { 
+            background: rgba(255,255,255,0.03); height: 85px; border-radius: 15px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            border: 1px solid rgba(255,255,255,0.08); 
+        }
+        .stat-square span { font-size: 9px; opacity: 0.6; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-square b { font-size: 22px; }
+
+        .gpt-box { 
+            background: rgba(188, 19, 254, 0.05); border: 1px solid var(--neon-purple); 
+            border-radius: 15px; padding: 15px; font-size: 11px; font-family: 'JetBrains Mono'; min-height: 100px; line-height: 1.5;
         }
 
-        .back-btn { position: absolute; top: 45px; left: 25px; font-size: 28px; color: var(--neon-cyan); cursor: pointer; }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 30px;
+        nav {
+            position: absolute; bottom: 0; width: 100%; height: 80px; z-index: 1000;
+            background: rgba(10, 10, 20, 0.98); display: flex; justify-content: space-around; 
+            align-items: center; border-top: 1px solid rgba(255,255,255,0.1);
         }
-
-        .stat-box {
-            background: rgba(255,255,255,0.03);
-            border: 2px solid #222;
-            border-radius: 18px;
-            padding: 20px;
-            text-align: center;
-        }
-        .stat-box.highlight-yellow { border-color: var(--neon-yellow); }
-        .stat-box.highlight-purple { border-color: var(--neon-purple); }
-        .stat-box.highlight-cyan { border-color: var(--neon-cyan); }
-        .stat-box.full { grid-column: 1 / -1; border-color: var(--neon-orange); }
-
-        .st-label { font-size: 10px; color: var(--text-gray); text-transform: uppercase; margin-bottom: 5px; }
-        .st-value { font-size: 26px; font-weight: 800; }
-
-        .ai-card {
-            margin-top: 20px;
-            border: 1px solid var(--neon-green);
-            background: rgba(0, 255, 65, 0.05);
-            padding: 20px;
-            border-radius: 20px;
-        }
-        .ai-card h3 { color: var(--neon-green); margin: 0 0 10px; font-size: 15px; text-transform: uppercase; }
-        .ai-card p { font-size: 14px; color: #ccc; line-height: 1.6; font-style: italic; margin: 0; }
-
+        .nav-link { color: rgba(255,255,255,0.3); font-size: 10px; text-align: center; cursor: pointer; transition: 0.3s; font-weight: 700; }
+        .nav-link i { display: block; font-size: 20px; font-style: normal; margin-bottom: 6px; }
+        .nav-link.active { color: var(--neon-cyan); text-shadow: 0 0 15px var(--neon-cyan); }
     </style>
 </head>
 <body>
 
-    <!-- Hlavný zoznam -->
-    <div id="home-view">
-        <div class="app-header">Neural Tickets</div>
-        <div class="section-title">Dnešné Tipy</div>
-        <div class="matches-list" id="matches-container">
-            <!-- Sem sa načítajú zápasy -->
+<div class="app-shell">
+    <div class="scanner-line"></div>
+    <div class="nebula"></div>
+    
+    <div class="main-container">
+        <!-- SEKCIA ZÁPASY -->
+        <section id="sect-matches" class="page-section active">
+            <h2 style="font-size: 12px; color: var(--neon-magenta); letter-spacing: 3px; margin-bottom: 20px;">// NEURAL_FEED_LIVE</h2>
+            <div id="match-list-container">
+                <!-- Tu sa načítajú dáta z Firebase -->
+                <div style="text-align:center; opacity:0.5; font-size:12px; padding:40px;">INITIALIZING_STREAM...</div>
+            </div>
+        </section>
+
+        <!-- OSTATNÉ SEKCIE -->
+        <section id="sect-tips" class="page-section">
+            <h2 style="font-size: 12px; color: var(--neon-yellow); letter-spacing: 3px;">// HOT_TIPS</h2>
+            <div class="cyber-card"><b>TOP_VALUE:</b> Výhra Domáci • Kurz 2.10</div>
+            <div class="cyber-card"><b>SAFE_BET:</b> Over 1.5 • Kurz 1.35</div>
+        </section>
+
+        <section id="sect-ticket" class="page-section">
+            <h2 style="font-size: 12px; color: var(--neon-magenta); letter-spacing: 3px;">// MY_TICKET</h2>
+            <div class="cyber-card" style="text-align:center; padding:60px; opacity:0.3; font-size:11px;">ENCRYPTED_EMPTY</div>
+        </section>
+
+        <section id="sect-stats" class="page-section">
+            <h2 style="font-size: 12px; color: var(--neon-green); letter-spacing: 3px;">// ROI_ANALYTICS</h2>
+            <div class="cyber-card" style="text-align:center; border-color: var(--neon-green);">
+                <span style="font-size:10px; opacity:0.6;">ACCURACY_RATE</span>
+                <div style="font-size:38px; color:var(--neon-green); font-weight:900; text-shadow: 0 0 15px var(--neon-green);">81.2%</div>
+            </div>
+        </section>
+    </div>
+
+    <!-- DETAIL PANEL -->
+    <div id="detail-view">
+        <div onclick="closeMatch()" style="color:var(--neon-magenta); font-size:10px; margin-bottom:20px; cursor:pointer; font-weight:900; letter-spacing:2px;">[ < BACK_TO_FEED ]</div>
+        
+        <div class="stats-header">
+            <div class="team-logo" id="det-logo1">...</div>
+            <div class="form-bars">
+                <div class="bar" style="height:15px"></div><div class="bar" style="height:25px"></div><div class="bar" style="height:35px; background:var(--neon-green); opacity:1;"></div>
+                <div style="width:20px"></div>
+                <div class="bar" style="height:30px"></div><div class="bar" style="height:18px"></div><div class="bar" style="height:12px; background:var(--neon-magenta); opacity:1;"></div>
+            </div>
+            <div class="team-logo" id="det-logo2" style="border-color:var(--neon-magenta); color:var(--neon-magenta);">...</div>
+        </div>
+
+        <h2 id="det-title" style="text-align:center; font-size:16px; margin-bottom:25px; letter-spacing:1px; line-height:1.4;"></h2>
+        
+        <div class="stat-grid">
+            <div class="stat-square"><span>OVER 1.5</span><b id="s1" style="color:var(--neon-yellow)">0%</b></div>
+            <div class="stat-square"><span>OVER 2.5</span><b id="s2" style="color:var(--neon-magenta)">0%</b></div>
+            <div class="stat-square"><span>BTTS (YES)</span><b id="s3" style="color:var(--neon-green)">0%</b></div>
+            <div class="stat-square"><span>KARTY 3.5+</span><b id="s4" style="color:var(--neon-cyan)">0%</b></div>
+            <div class="stat-square" style="grid-column: span 2; height: 70px;">
+                <span>PRIEMER ROHOV</span><b id="s5" style="color:var(--neon-yellow)">0.0</b>
+            </div>
+        </div>
+
+        <div class="gpt-box">
+            <div style="font-size:9px; color:var(--neon-purple); margin-bottom:10px; font-weight:900; letter-spacing:1px;">> ANALYZING_LIVE_DATA_STREAM...</div>
+            <div id="det-gpt"></div>
         </div>
     </div>
 
-    <!-- Detail zápasu -->
-    <div id="detail-view">
-        <div class="back-btn" onclick="closeDetail()">❮</div>
-        <div class="app-header">Neural Tickets</div>
-        <h2 id="match-title" style="text-align:center; margin: 30px 0; font-size:28px;"></h2>
-        <div class="stats-grid" id="stats-container"></div>
-        <div id="ai-container"></div>
-    </div>
+    <!-- NAVIGÁCIA -->
+    <nav>
+        <div class="nav-link active" onclick="showPage('sect-matches', this)"><i>⚽</i>ZÁPASY</div>
+        <div class="nav-link" onclick="showPage('sect-tips', this)"><i>⭐</i>TIPY</div>
+        <div class="nav-link" onclick="showPage('sect-ticket', this)"><i>🎫</i>TIKET</div>
+        <div class="nav-link" onclick="showPage('sect-stats', this)"><i>📊</i>STATS</div>
+    </nav>
+</div>
 
 <script>
-    // Konfigurácia tvojho Firebase
+    // TVOJ FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyBX-qBKbLfmBynXr4Bf1q5j4cXFyU9Dv0M",
         authDomain: "patoanalitik.firebaseapp.com",
@@ -174,70 +199,106 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    const currentDay = "20260330"; 
+    
+    // Zistíme dnešný dátum vo formáte YYYYMMDD
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    let gptInterval;
 
-    // Dynamické priradenie vlajky
-    function getFlagIcon(liga) {
-        if (!liga) return "⚽";
-        const l = liga.toLowerCase();
-        if (l.includes("premier")) return "🏴󠁧󠁢󠁥󠁮󠁧󠁿";
-        if (l.includes("serie")) return "🇮🇹";
-        if (l.includes("laliga")) return "🇪🇸";
-        if (l.includes("bundesliga")) return "🇩🇪";
-        if (l.includes("fortuna") || l.includes("slovak")) return "🇸🇰";
-        return "⚽";
-    }
-
-    function loadData() {
-        const container = document.getElementById('matches-container');
-        db.collection("zapasy").where("timestamp", "==", currentDay).get().then(snap => {
+    // NAČÍTANIE DÁT
+    function loadLiveFeed() {
+        const container = document.getElementById('match-list-container');
+        
+        db.collection("zapasy").where("timestamp", "==", "20260330").get().then(snap => {
             container.innerHTML = "";
-            snap.forEach((doc, i) => {
+            if(snap.empty) {
+                container.innerHTML = '<div style="text-align:center; padding:40px; opacity:0.5;">NO_LIVE_DATA_FOUND</div>';
+                return;
+            }
+
+            snap.forEach(doc => {
                 const m = doc.data();
-                const neonClass = i % 2 === 0 ? 'border-purple' : 'border-cyan';
+                // Určíme badge percentá (použijeme Over 1.5 ako hlavné)
+                const mainProb = m.o15 || 0;
                 
                 const card = document.createElement('div');
-                card.className = `match-card ${neonClass}`;
-                card.onclick = () => openDetail(m);
+                card.className = "cyber-card match-row";
+                card.onclick = () => openMatch(m);
                 card.innerHTML = `
-                    <div class="league-row">
-                        <span>${getFlagIcon(m.liga)}</span>
-                        <span class="league-name">${m.liga || 'LIGA'}</span>
+                    <div class="match-info">
+                        <b>${m.zapas}</b>
+                        <span>${m.liga || 'LEAGUE'} • ${m.cas || '--:--'}</span>
                     </div>
-                    <div class="teams-row">
-                        ${m.zapas.replace(' vs ', ' <span>vs</span> ')}
-                    </div>
+                    <div class="prob-badge">${mainProb}%</div>
                 `;
                 container.appendChild(card);
             });
         });
     }
 
-    function openDetail(m) {
-        document.getElementById('detail-view').style.display = 'block';
-        document.getElementById('match-title').innerHTML = m.zapas.replace(' vs ', '<br><span style="color:#444; font-size:18px;">vs</span><br>');
+    function showPage(id, el) {
+        document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        el.classList.add('active');
+    }
+
+    function openMatch(m) {
+        const view = document.getElementById('detail-view');
+        const teams = m.zapas.split(' vs ');
         
-        document.getElementById('stats-container').innerHTML = `
-            <div class="stat-box highlight-yellow"><div class="st-label">Over 1.5</div><div class="st-value" style="color:var(--neon-yellow)">${m.o15}%</div></div>
-            <div class="stat-box highlight-purple"><div class="st-label">Over 2.5</div><div class="st-value" style="color:var(--neon-purple)">${m.o25}%</div></div>
-            <div class="stat-box highlight-purple"><div class="st-label">BTTS</div><div class="st-value" style="color:var(--neon-purple)">${m.btts > 50 ? 'YES' : 'NO'}</div></div>
-            <div class="stat-box highlight-cyan"><div class="st-label">Corners</div><div class="st-value" style="color:var(--neon-cyan)">${m.rohy}</div></div>
-            <div class="stat-box full"><div class="st-label">Cards</div><div class="st-value" style="color:var(--neon-orange)">${m.karty}</div></div>
-        `;
+        document.getElementById('det-title').innerText = m.zapas;
+        // Skratka tímu (prvé 3 písmená)
+        document.getElementById('det-logo1').innerText = teams[0].substring(0,3).toUpperCase();
+        document.getElementById('det-logo2').innerText = teams[1].substring(0,3).toUpperCase();
+        
+        view.style.display = 'block';
+        setTimeout(() => view.classList.add('open'), 10);
 
-        document.getElementById('ai-container').innerHTML = `
-            <div class="ai-card">
-                <h3>💡 AI Analysis</h3>
-                <p>${m.ai || 'Načítavam analýzu...'}</p>
-            </div>
-        `;
+        // Animácia štatistík
+        animateValue('s1', m.o15, "%");
+        animateValue('s2', m.o25, "%");
+        animateValue('s3', m.btts, "%");
+        animateValue('s4', m.karty, "+");
+        animateValue('s5', m.rohy, "");
+
+        // GPT Písanie
+        const gptDiv = document.getElementById('det-gpt');
+        const gptText = m.ai || "Initializing deep neural analysis of recent form and tactical patterns...";
+        gptDiv.innerText = "";
+        let charIndex = 0;
+        clearInterval(gptInterval);
+        gptInterval = setInterval(() => {
+            if (charIndex < gptText.length) {
+                gptDiv.innerText += gptText.charAt(charIndex);
+                charIndex++;
+            } else { clearInterval(gptInterval); }
+        }, 20);
     }
 
-    function closeDetail() {
-        document.getElementById('detail-view').style.display = 'none';
+    function animateValue(id, target, suffix) {
+        let current = 0;
+        const el = document.getElementById(id);
+        const step = target / 30; 
+        const interval = setInterval(() => {
+            current += step;
+            if (current >= target) {
+                el.innerText = target + suffix;
+                clearInterval(interval);
+            } else {
+                el.innerText = (id === 's5' ? current.toFixed(1) : Math.floor(current)) + suffix;
+            }
+        }, 20);
     }
 
-    loadData();
+    function closeMatch() {
+        const view = document.getElementById('detail-view');
+        view.classList.remove('open');
+        clearInterval(gptInterval);
+        setTimeout(() => view.style.display = 'none', 400);
+    }
+
+    // Spustenie
+    loadLiveFeed();
 </script>
 </body>
 </html>
