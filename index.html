@@ -3,8 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neural Pulse 7.0 - PatoAnalitik Edition</title>
+    <title>Neural Pulse 7.0 - PatoAnalitik</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
     <style>
         :root {
             --bg-main: #0a0518;
@@ -37,12 +42,16 @@
         .date-item span { display: block; font-size: 8px; font-family: 'JetBrains Mono'; }
 
         .main-container { height: calc(100vh - 145px); overflow-y: auto; padding: 15px; }
-        
+        .page-section { display: none; }
+        .page-section.active { display: block; animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
         .match-card { 
             background: rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; margin-bottom: 8px; 
             display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05);
             cursor: pointer;
         }
+        .match-card:active { background: var(--glass); }
         .match-card .prob { color: var(--neon-green); font-weight: 900; text-shadow: 0 0 8px var(--neon-green); }
 
         #detail-view {
@@ -50,6 +59,13 @@
             display: none; padding: 20px; transform: translateY(100%); transition: 0.5s cubic-bezier(0.19, 1, 0.22, 1); overflow-y: auto;
         }
         #detail-view.open { display: block; transform: translateY(0); }
+
+        .detail-header { display: flex; justify-content: space-around; align-items: center; margin: 20px 0; }
+        .team-logo-circle {
+            width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--irid-purple);
+            display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05);
+            font-size: 18px; font-weight: 900; color: #fff; box-shadow: 0 0 20px rgba(112, 0, 255, 0.3);
+        }
 
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
         .stat-box { background: var(--glass); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px; text-align: center; }
@@ -60,6 +76,7 @@
             background: rgba(112, 0, 255, 0.1); border: 1px solid var(--irid-purple); border-left: 4px solid var(--irid-pink);
             padding: 15px; border-radius: 12px; margin-top: 10px; position: relative;
         }
+        .gpt-oracle-box::before { content: "AI ORACLE ANALYSIS"; position: absolute; top: -8px; left: 10px; background: var(--irid-purple); font-size: 7px; padding: 2px 6px; border-radius: 4px; }
         #det-gpt { font-family: 'JetBrains Mono'; font-size: 11px; line-height: 1.5; color: #ddd; }
 
         nav {
@@ -67,103 +84,132 @@
             background: rgba(10, 5, 25, 0.95); backdrop-filter: blur(20px);
             display: flex; justify-content: space-around; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); z-index: 2000;
         }
-        .nav-link { color: rgba(255,255,255,0.3); font-size: 9px; text-align: center; flex: 1; cursor: pointer; transition: 0.3s; }
-        .nav-link.active { color: var(--irid-cyan); text-shadow: 0 0 10px var(--irid-cyan); }
+        .nav-link { color: var(--irid-cyan); font-size: 9px; text-align: center; flex: 1; text-shadow: 0 0 10px var(--irid-cyan); }
+        .nav-link i { display: block; font-size: 20px; margin-bottom: 4px; font-style: normal; }
     </style>
 </head>
 <body>
 
 <div class="app-shell">
-    <div class="date-strip">
-        <div style="color:var(--neon-yellow); font-size:9px; align-self:center; border:1px solid; padding:4px; border-radius:4px;">LIVE DATA</div>
-        <div class="date-item active"><span>DNES</span><b>30</b></div>
-        <div class="date-item"><span>ZAJTRA</span><b>31</b></div>
+    <div class="date-strip" id="date-ui"></div>
+
+    <div class="main-container">
+        <section id="sect-matches" class="page-section active">
+            <div id="matches-container">
+                <div style="text-align:center; padding-top:50px; opacity:0.5;">NAČÍTAVAM...</div>
+            </div>
+        </section>
     </div>
 
-    <div class="main-container" id="match-list-container">
-        <p style="text-align:center; opacity:0.5; margin-top:50px;">PRIPÁJAM SA NA ORACLE SERVER...</p>
-    </div>
-
-    <!-- DETAIL PANEL -->
     <div id="detail-view">
         <div onclick="closeMatch()" style="color:var(--irid-pink); font-size:10px; cursor:pointer; margin-bottom:15px;">[ SPÄŤ ]</div>
-        <h2 id="det-title" style="text-align:center; font-size:15px; margin-bottom:20px;"></h2>
-
+        <div class="detail-header">
+            <div class="team-logo-circle" id="logo1">?</div>
+            <div style="font-weight:900; color:var(--neon-yellow)">VS</div>
+            <div class="team-logo-circle" id="logo2" style="border-color:var(--irid-cyan)">?</div>
+        </div>
+        <h2 id="det-title" style="text-align:center; font-size:14px; margin-bottom:20px;"></h2>
         <div class="stat-grid">
             <div class="stat-box"><span>OVER 1.5</span><b id="s1">0%</b></div>
             <div class="stat-box"><span>OVER 2.5</span><b id="s2">0%</b></div>
             <div class="stat-box"><span>BTTS</span><b id="s3">0%</b></div>
-            <div class="stat-box"><span>ROHY</span><b id="s4">0</b></div>
+            <div class="stat-box"><span>KARTY</span><b id="s4">0</b></div>
+            <div class="stat-box" style="grid-column: span 2;">
+                <span>ROHOVÉ KOPY</span><b id="s5">0</b>
+            </div>
         </div>
-
-        <div class="gpt-oracle-box">
-            <div id="det-gpt"></div>
-        </div>
+        <div class="gpt-oracle-box"><div id="det-gpt"></div></div>
     </div>
 
     <nav>
-        <div class="nav-link active"><i>⚽</i>MATCHES</div>
-        <div class="nav-link"><i>⭐</i>TIPS</div>
-        <div class="nav-link"><i>📊</i>STATS</div>
+        <div class="nav-link"><i>⚽</i>MATCHES</div>
+        <div class="nav-link" style="opacity: 0.3;"><i>📊</i>STATS</div>
     </nav>
 </div>
 
-<!-- FIREBASE SDK (COMPAT VERSION) -->
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-
 <script>
-    // TVOJA KONFIGURÁCIA Z FOTKY
+    // --- TVOJA KONFIGURÁCIA Z FOTKY ---
     const firebaseConfig = {
-        apiKey: "AIzaSyBX-qBBbLmmBynXr4BF1q4cXyU9Dv0M",
+        apiKey: "AIzaSyBX-qBKbLfmBynXr4Bf1q5j4cXFyU9Dv0M",
         authDomain: "patoanalitik.firebaseapp.com",
         projectId: "patoanalitik",
         storageBucket: "patoanalitik.firebasestorage.app",
         messagingSenderId: "585647962898",
-        appId: "1:585647962898:web:d850a3983c3e473e49d1cb",
+        appId: "1:585647962898:web:d050a3983c3e473e49d1cb",
         measurementId: "G-6ZPDGNJH9Y"
     };
 
-    // Inicializácia
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Načítanie dát
-    function loadLiveMatches() {
-        const container = document.getElementById('match-list-container');
-        
-        db.collection("zapasy").orderBy("timestamp", "desc").limit(20).onSnapshot((snapshot) => {
-            if (snapshot.empty) {
-                container.innerHTML = "<p style='text-align:center; opacity:0.5;'>Zatiaľ žiadne dáta. Spusti robota v PC!</p>";
-                return;
-            }
-
-            container.innerHTML = "";
-            snapshot.forEach((doc) => {
-                const m = doc.data();
-                const card = document.createElement('div');
-                card.className = 'match-card';
-                card.onclick = () => openMatch(m.zapas, m.o15, m.o25, m.btts, m.rohy, m.ai);
-                card.innerHTML = `
-                    <div><b>${m.zapas}</b><br><small style="color:var(--irid-purple)">${m.cas} • ${m.datum}</small></div>
-                    <div class="prob">${m.o25}%</div>
-                `;
-                container.appendChild(card);
+    function getDates() {
+        const dates = [];
+        for(let i=0; i<4; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() + i);
+            dates.push({
+                display: i === 0 ? "DNES" : d.toLocaleDateString('sk', {weekday:'short'}).toUpperCase(),
+                day: d.getDate(),
+                full: d.getFullYear() + "" + String(d.getMonth() + 1).padStart(2, '0') + "" + String(d.getDate()).padStart(2, '0')
             });
+        }
+        return dates;
+    }
+
+    let selectedDate = getDates()[0].full;
+
+    function renderDateStrip() {
+        const ui = document.getElementById('date-ui');
+        ui.innerHTML = '<div style="color:var(--neon-yellow); font-size:9px; align-self:center; border:1px solid; padding:4px; border-radius:4px;">LIVE</div>';
+        getDates().forEach(d => {
+            const item = document.createElement('div');
+            item.className = `date-item ${d.full === selectedDate ? 'active' : ''}`;
+            item.innerHTML = `<span>${d.display}</span><b>${d.day}</b>`;
+            item.onclick = () => { selectedDate = d.full; renderDateStrip(); loadMatches(); };
+            ui.appendChild(item);
         });
     }
 
-    function openMatch(title, p1, p2, p3, rohy, aiText) {
+    function loadMatches() {
+        const container = document.getElementById('matches-container');
+        container.innerHTML = '<div style="text-align:center; padding-top:30px; color:var(--irid-cyan)">PRIPÁJAM...</div>';
+
+        db.collection("zapasy")
+          .where("timestamp", "==", selectedDate)
+          .get()
+          .then(snap => {
+            container.innerHTML = "";
+            if(snap.empty) {
+                container.innerHTML = '<div style="text-align:center; padding-top:30px; opacity:0.3;">ŽIADNE DÁTA</div>';
+                return;
+            }
+            snap.forEach(doc => {
+                const m = doc.data();
+                const card = document.createElement('div');
+                card.className = 'match-card';
+                card.onclick = () => openMatch(m.zapas, m.t1, m.t2, m.o15, m.o25, m.btts, m.karty, m.rohy, m.ai);
+                card.innerHTML = `<div><b>${m.zapas}</b><br><small style="color:var(--irid-purple)">${m.cas || '19:00'}</small></div><div class="prob">${m.o15}%</div>`;
+                container.appendChild(card);
+            });
+          })
+          .catch(err => {
+              container.innerHTML = "Chyba: " + err.message;
+          });
+    }
+
+    function openMatch(title, t1, t2, p1, p2, p3, p4, p5, gptText) {
+        const view = document.getElementById('detail-view');
         document.getElementById('det-title').innerText = title;
+        document.getElementById('logo1').innerText = t1.substring(0,2).toUpperCase();
+        document.getElementById('logo2').innerText = t2.substring(0,2).toUpperCase();
+        view.style.display = 'block';
+        setTimeout(() => view.classList.add('open'), 10);
         document.getElementById('s1').innerText = p1 + "%";
         document.getElementById('s2').innerText = p2 + "%";
         document.getElementById('s3').innerText = p3 + "%";
-        document.getElementById('s4').innerText = rohy;
-        document.getElementById('det-gpt').innerText = aiText;
-        
-        const view = document.getElementById('detail-view');
-        view.style.display = 'block';
-        setTimeout(() => view.classList.add('open'), 10);
+        document.getElementById('s4').innerText = p4;
+        document.getElementById('s5').innerText = p5;
+        document.getElementById('det-gpt').innerText = gptText;
     }
 
     function closeMatch() {
@@ -172,9 +218,8 @@
         setTimeout(() => view.style.display = 'none', 500);
     }
 
-    // Spusti načítanie
-    loadLiveMatches();
+    renderDateStrip();
+    loadMatches();
 </script>
-
 </body>
 </html>
