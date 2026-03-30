@@ -3,140 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PatoAnalitik PRO</title>
+    <title>Neural Tickets PRO</title>
     
-    <!-- Meta tagy pre pocit skutočnej apky -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#050510">
-
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-    
+
     <style>
         :root {
-            --bg: #050510;
-            --card-bg: #11111d;
-            --accent: #00f2ff;
-            --fuchsia: #ff00ff;
-            --green: #00ff88;
-            --text-main: #ffffff;
-            --text-dim: #888899;
-            --nav-bg: #0a0a15;
+            --bg-dark: #050505;
+            --neon-purple: #bc13fe;
+            --neon-cyan: #00f2ff;
+            --neon-yellow: #fefe33;
+            --neon-green: #00ff41;
+            --neon-orange: #ff8c00;
+            --text-gray: #aaaaaa;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
-            background: var(--bg);
-            color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-dark);
+            /* Matrix/Kovové pozadie */
+            background-image: 
+                linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)),
+                url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+            color: white;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 0;
-            overflow-x: hidden;
-            padding-bottom: 80px; /* Priestor pre spodné menu */
+            min-height: 100vh;
         }
 
-        /* Status bar padding pre iPhony */
-        header {
-            padding: 50px 20px 15px;
-            background: linear-gradient(to bottom, #101025, var(--bg));
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            text-align: left;
+        /* Hlavný nadpis */
+        .app-header {
+            text-align: center;
+            padding: 40px 20px 10px;
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--text-gray);
+            letter-spacing: 1px;
         }
 
-        header h1 { font-size: 24px; margin: 0; font-weight: 800; letter-spacing: -0.5px; }
-        header span { color: var(--accent); }
-        header p { margin: 5px 0 0; color: var(--text-dim); font-size: 14px; }
+        .section-title {
+            padding: 0 25px;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
 
         /* Zoznam zápasov */
-        .container { padding: 15px; }
+        .matches-container { padding: 0 20px 100px; }
 
         .match-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 18px;
-            margin-bottom: 15px;
-            border-left: 4px solid var(--accent);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            transition: transform 0.2s;
+            background: rgba(20, 20, 20, 0.9);
+            border-radius: 20px;
+            margin-bottom: 20px;
+            padding: 20px;
+            position: relative;
+            border: 2px solid transparent;
+            transition: 0.3s;
+            overflow: hidden;
         }
-        .match-card:active { transform: scale(0.97); }
 
-        .league { font-size: 11px; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 8px; letter-spacing: 1px; }
-        .teams { font-size: 17px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; }
-        .teams span { color: var(--text-dim); font-size: 14px; font-weight: 400; }
+        /* Neónové farby pre karty */
+        .card-purple { border-color: var(--neon-purple); box-shadow: 0 0 15px rgba(188, 19, 254, 0.4); }
+        .card-cyan { border-color: var(--neon-cyan); box-shadow: 0 0 15px rgba(0, 242, 255, 0.4); }
 
-        /* Detail obrazovka */
+        /* Badge ligy */
+        .league-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.1);
+            width: fit-content;
+            padding: 4px 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        .flag { width: 18px; height: 12px; object-fit: cover; border-radius: 2px; }
+        .league-name { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #fff; }
+
+        .teams-row {
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .teams-row span { color: var(--text-gray); font-weight: normal; margin: 0 10px; }
+
+        /* DETAIL OBRAZOVKA */
         #detail-screen {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg);
-            z-index: 200;
+            background: var(--bg-dark);
+            background-image: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+            z-index: 1000;
             display: none;
             overflow-y: auto;
-            padding: 60px 20px 20px;
+            padding: 50px 20px;
         }
 
-        .back-btn { position: absolute; top: 40px; left: 20px; font-size: 28px; color: var(--accent); cursor: pointer; }
+        .back-icon { position: absolute; top: 45px; left: 25px; font-size: 24px; cursor: pointer; }
 
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 25px 0; }
-        .stat-box { background: var(--card-bg); padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #222; }
-        .stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 5px; }
-        .stat-val { font-size: 20px; font-weight: 700; color: var(--accent); }
-
-        .ai-card { background: rgba(0, 255, 136, 0.05); border: 1px solid var(--green); border-radius: 16px; padding: 20px; margin-top: 10px; }
-        .ai-card h3 { margin: 0 0 10px; color: var(--green); font-size: 16px; }
-        .ai-card p { margin: 0; font-style: italic; line-height: 1.5; color: #ccc; font-size: 14px; }
-
-        /* Spodná navigácia */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0; left: 0; width: 100%;
-            height: 70px;
-            background: var(--nav-bg);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            border-top: 1px solid #222;
-            padding-bottom: 10px;
-            z-index: 150;
+        /* Mriežka štatistík */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 30px;
         }
-        .nav-item { text-align: center; color: var(--text-dim); font-size: 10px; text-decoration: none; }
-        .nav-item.active { color: var(--accent); }
-        .nav-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+
+        .stat-item {
+            background: rgba(0,0,0,0.5);
+            border: 2px solid #333;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+        .stat-item.yellow { border-color: var(--neon-yellow); box-shadow: 0 0 10px rgba(254, 254, 51, 0.3); }
+        .stat-item.purple { border-color: var(--neon-purple); box-shadow: 0 0 10px rgba(188, 19, 254, 0.3); }
+        .stat-item.cyan { border-color: var(--neon-cyan); box-shadow: 0 0 10px rgba(0, 242, 255, 0.3); }
+        .stat-item.orange { border-color: var(--neon-orange); box-shadow: 0 0 10px rgba(255, 140, 0, 0.3); grid-column: 1 / -1; }
+
+        .stat-label { font-size: 12px; color: var(--text-gray); margin-bottom: 8px; }
+        .stat-value { font-size: 26px; font-weight: bold; }
+
+        /* AI Box */
+        .ai-analysis {
+            margin-top: 20px;
+            border: 2px solid var(--neon-green);
+            background: rgba(0, 255, 65, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+        }
+        .ai-analysis h3 { color: var(--neon-green); margin: 0 0 10px; font-size: 14px; text-transform: uppercase; }
+        .ai-analysis p { font-size: 14px; line-height: 1.6; color: #ccc; margin: 0; }
 
     </style>
 </head>
 <body>
 
-    <div id="main-screen">
-        <header>
-            <h1>Pato<span>Analitik</span> PRO</h1>
-            <p>Dnešné top analýzy</p>
-        </header>
-
-        <div class="container" id="matches-list">
-            <p style="text-align: center; color: var(--text-dim);">Načítavam analýzy...</p>
+    <!-- Hlavná obrazovka -->
+    <div id="list-screen">
+        <div class="app-header">Neural Tickets</div>
+        <div class="section-title">Dnešné Tipy</div>
+        <div class="matches-container" id="matches-list">
+            <!-- Dáta sa načítajú sem -->
         </div>
     </div>
 
+    <!-- Detail obrazovka -->
     <div id="detail-screen">
-        <div class="back-btn" onclick="closeDetail()">✕</div>
-        <h2 id="det-teams" style="text-align: center; margin-top: 20px;"></h2>
-        <div id="det-content"></div>
+        <div class="back-icon" onclick="closeDetail()">❮</div>
+        <div class="app-header">Neural Tickets</div>
+        <h2 id="det-teams" style="text-align:center; margin-top:30px; font-size:28px;"></h2>
+        
+        <div class="stats-grid" id="det-stats">
+            <!-- Štatistiky sa načítajú sem -->
+        </div>
+        
+        <div id="det-ai" class="ai-analysis">
+            <!-- AI text sem -->
+        </div>
     </div>
 
-    <nav class="bottom-nav">
-        <div class="nav-item active"><span class="nav-icon">⚽</span>Zápasy</div>
-        <div class="nav-item"><span class="nav-icon">📊</span>Tikety</div>
-        <div class="nav-item"><span class="nav-icon">👤</span>Profil</div>
-    </nav>
-
 <script>
-    // TVOJA KONFIGURÁCIA FIREBASE (Ponechaj ako máš)
+    // TVOJ FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyBX-qBKbLfmBynXr4Bf1q5j4cXFyU9Dv0M",
         authDomain: "patoanalitik.firebaseapp.com",
@@ -151,37 +184,45 @@
     const currentDay = "20260330"; 
 
     function loadMatches() {
-        const listDiv = document.getElementById('matches-list');
+        const list = document.getElementById('matches-list');
         db.collection("zapasy").where("timestamp", "==", currentDay).get().then(snap => {
-            listDiv.innerHTML = "";
-            snap.forEach(doc => {
+            list.innerHTML = "";
+            snap.forEach((doc, i) => {
                 const m = doc.data();
+                const colorClass = i % 2 === 0 ? 'card-purple' : 'card-cyan';
+                
                 const card = document.createElement('div');
-                card.className = 'match-card';
+                card.className = `match-card ${colorClass}`;
                 card.onclick = () => openDetail(m);
                 card.innerHTML = `
-                    <div class="league">${m.liga || 'Svet'}</div>
-                    <div class="teams">${m.zapas.split(' vs ')[0]} <span>vs</span> ${m.zapas.split(' vs ')[1]}</div>
+                    <div class="league-info">
+                        <img class="flag" src="https://flagcdn.com/w40/it.png">
+                        <span class="league-name">${m.liga || 'SERIE A'}</span>
+                    </div>
+                    <div class="teams-row">
+                        ${m.zapas.replace(' vs ', ' <span>vs</span> ')}
+                    </div>
                 `;
-                listDiv.appendChild(card);
+                list.appendChild(card);
             });
         });
     }
 
     function openDetail(m) {
         document.getElementById('detail-screen').style.display = 'block';
-        document.getElementById('det-teams').innerText = m.zapas;
-        document.getElementById('det-content').innerHTML = `
-            <div class="stat-grid">
-                <div class="stat-box"><div class="stat-label">Over 1.5</div><div class="stat-val">${m.o15}%</div></div>
-                <div class="stat-box"><div class="stat-label">Over 2.5</div><div class="stat-val">${m.o25}%</div></div>
-                <div class="stat-box"><div class="stat-label">BTTS</div><div class="stat-val">${m.btts > 50 ? 'ÁNO' : 'NIE'}</div></div>
-                <div class="stat-box"><div class="stat-label">Rohy</div><div class="stat-val">${m.rohy}</div></div>
-            </div>
-            <div class="ai-card">
-                <h3>💡 AI Analýza</h3>
-                <p>${m.ai}</p>
-            </div>
+        document.getElementById('det-teams').innerHTML = m.zapas.replace(' vs ', ' <span style="font-size:18px; color:#666;">vs</span> ');
+        
+        document.getElementById('det-stats').innerHTML = `
+            <div class="stat-item yellow"><div class="stat-label">Over 1.5</div><div class="stat-value" style="color:var(--neon-yellow)">${m.o15}%</div></div>
+            <div class="stat-item purple"><div class="stat-label">Over 2.5</div><div class="stat-value" style="color:var(--neon-purple)">${m.o25}%</div></div>
+            <div class="stat-item purple"><div class="stat-label">BTTS</div><div class="stat-value" style="color:var(--neon-purple)">${m.btts > 50 ? 'YES' : 'NO'}</div></div>
+            <div class="stat-item cyan"><div class="stat-label">Corners</div><div class="stat-value" style="color:var(--neon-cyan)">${m.rohy}</div></div>
+            <div class="stat-item orange"><div class="stat-label">Cards</div><div class="stat-value" style="color:var(--neon-orange)">${m.karty}</div></div>
+        `;
+
+        document.getElementById('det-ai').innerHTML = `
+            <h3>AI analysis</h3>
+            <p>${m.ai}</p>
         `;
     }
 
