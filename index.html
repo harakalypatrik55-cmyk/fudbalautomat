@@ -3,45 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PatoAnalitik - Jednoducho</title>
+    <title>PatoAnalitik - Futbalové Predpovede</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     <style>
         body { background: #0a0518; color: white; font-family: sans-serif; margin: 0; padding: 10px; }
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 10px; }
-        .tab { background: #222; padding: 10px 20px; border-radius: 5px; cursor: pointer; white-space: nowrap; }
-        .tab.active { background: #00f2ff; color: black; font-weight: bold; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+        .tab { background: #1a1a2e; padding: 12px 25px; border-radius: 8px; cursor: pointer; white-space: nowrap; border: 1px solid #333; transition: 0.3s; }
+        .tab.active { background: #00f2ff; color: black; font-weight: bold; border-color: #00f2ff; box-shadow: 0 0 10px #00f2ff; }
         
-        .league-group { margin-bottom: 20px; border: 1px solid #333; border-radius: 8px; overflow: hidden; }
-        .league-header { background: #1a1a2e; padding: 10px; font-weight: bold; border-bottom: 1px solid #333; }
+        .league-group { margin-bottom: 20px; border: 1px solid #333; border-radius: 10px; overflow: hidden; background: #110b26; }
+        .league-header { background: #1a1a2e; padding: 12px; font-weight: bold; color: #00f2ff; border-bottom: 1px solid #333; text-transform: uppercase; font-size: 14px; }
         
-        .match { padding: 15px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; cursor: pointer; }
+        .match { padding: 15px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
         .match:last-child { border-bottom: none; }
-        .match:active { background: #111; }
-        .match .time { color: #888; font-size: 12px; }
+        .match:hover { background: #1a1a3a; }
+        .match .teams { font-weight: 500; flex: 1; }
+        .match .time { color: #888; font-size: 13px; margin-left: 10px; background: #222; padding: 2px 8px; border-radius: 4px; }
         
-        #detail { position: fixed; inset: 0; background: #0a0518; display: none; padding: 20px; z-index: 100; }
-        .close-btn { color: #ff00ff; margin-bottom: 20px; cursor: pointer; }
-        .stat-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #222; }
+        #detail { position: fixed; inset: 0; background: #0a0518; display: none; padding: 20px; z-index: 100; overflow-y: auto; }
+        .close-btn { color: #ff00ff; margin-bottom: 25px; cursor: pointer; font-weight: bold; display: inline-block; padding: 5px 10px; border: 1px solid #ff00ff; border-radius: 5px; }
+        .stat-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #222; font-size: 16px; }
+        .stat-row b { color: #00f2ff; }
+        .ai-box { background: #1a1a2e; padding: 20px; border-radius: 12px; margin-top: 25px; border-left: 4px solid #00f2ff; line-height: 1.5; }
+        
+        #loader { text-align: center; padding: 50px; color: #00f2ff; font-weight: bold; }
     </style>
 </head>
 <body>
+
+    <h2 style="text-align:center; color: #00f2ff; margin-bottom: 20px;">PatoAnalitik ⚽</h2>
 
     <!-- Výber dňa -->
     <div class="tabs" id="day-tabs"></div>
 
     <!-- Zoznam líg a zápasov -->
-    <div id="content"></div>
+    <div id="content"><div id="loader">Načítavam zápasy...</div></div>
 
     <!-- Detail zápasu -->
     <div id="detail">
-        <div class="close-btn" onclick="closeDetail()">← SPÄŤ</div>
-        <h2 id="det-name"></h2>
+        <div class="close-btn" onclick="closeDetail()">← SPÄŤ NA ZOZNAM</div>
+        <h2 id="det-name" style="color: #fff; border-bottom: 2px solid #333; padding-bottom: 10px;"></h2>
         <div id="det-stats"></div>
-        <p id="det-ai" style="background: #1a1a2e; padding: 15px; border-radius: 8px; margin-top: 20px;"></p>
+        <div id="det-ai" class="ai-box"></div>
     </div>
 
 <script>
+    // TVOJA KONFIGURÁCIA FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyBX-qBKbLfmBynXr4Bf1q5j4cXFyU9Dv0M",
         authDomain: "patoanalitik.firebaseapp.com",
@@ -54,14 +62,16 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let currentDay = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    // OPRAVENÝ DÁTUM (Slovenský čas)
+    let currentDay = new Date().toLocaleDateString('sv').replace(/-/g, '');
 
     function initDays() {
         const tabs = document.getElementById('day-tabs');
+        tabs.innerHTML = "";
         for(let i=0; i<4; i++) {
             let d = new Date();
             d.setDate(d.getDate() + i);
-            let dayId = d.toISOString().split('T')[0].replace(/-/g, '');
+            let dayId = d.toLocaleDateString('sv').replace(/-/g, '');
             let label = i === 0 ? "DNES" : d.toLocaleDateString('sk', {weekday:'short'}).toUpperCase();
             
             let btn = document.createElement('div');
@@ -79,13 +89,15 @@
 
     function loadMatches() {
         const content = document.getElementById('content');
-        content.innerHTML = "Načítavam...";
+        content.innerHTML = '<div id="loader">Hľadám zápasy v databáze...</div>';
 
         db.collection("zapasy").where("timestamp", "==", currentDay).get().then(snap => {
             content.innerHTML = "";
-            if(snap.empty) { content.innerHTML = "Žiadne zápasy na tento deň."; return; }
+            if(snap.empty) { 
+                content.innerHTML = "<div style='text-align:center; padding: 20px; color: #888;'>Žiadne zápasy na tento deň. Spusti robota v počítači!</div>"; 
+                return; 
+            }
 
-            // Skupinové zobrazenie (LIGY)
             let leagues = {};
             snap.forEach(doc => {
                 let m = doc.data();
@@ -104,27 +116,30 @@
                     div.className = 'match';
                     div.onclick = () => openDetail(m);
                     div.innerHTML = `
-                        <div>${m.zapas}</div>
+                        <div class="teams">${m.zapas}</div>
                         <div class="time">${m.cas}</div>
                     `;
                     section.appendChild(div);
                 });
                 content.appendChild(section);
             }
+        }).catch(err => {
+            content.innerHTML = "Chyba pri načítaní: " + err;
         });
     }
 
     function openDetail(m) {
         document.getElementById('det-name').innerText = m.zapas;
         document.getElementById('det-stats').innerHTML = `
-            <div class="stat-row"><span>Over 1.5</span><b>${m.o15}%</b></div>
-            <div class="stat-row"><span>Over 2.5</span><b>${m.o25}%</b></div>
-            <div class="stat-row"><span>BTTS</span><b>${m.btts}%</b></div>
-            <div class="stat-row"><span>Rohy</span><b>${m.rohy}</b></div>
-            <div class="stat-row"><span>Karty</span><b>${m.karty}</b></div>
+            <div class="stat-row"><span>Pravdepodobnosť Over 1.5</span><b>${m.o15}%</b></div>
+            <div class="stat-row"><span>Pravdepodobnosť Over 2.5</span><b>${m.o25}%</b></div>
+            <div class="stat-row"><span>Oba tímy dajú gól (BTTS)</span><b>${m.btts}%</b></div>
+            <div class="stat-row"><span>Očakávané rohy (H2H)</span><b>${m.rohy}</b></div>
+            <div class="stat-row"><span>Očakávané karty</span><b>${m.karty}</b></div>
         `;
         document.getElementById('det-ai').innerText = m.ai;
         document.getElementById('detail').style.display = 'block';
+        window.scrollTo(0,0);
     }
 
     function closeDetail() { document.getElementById('detail').style.display = 'none'; }
