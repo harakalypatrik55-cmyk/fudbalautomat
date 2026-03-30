@@ -24,35 +24,26 @@
             color: var(--text);
             font-family: 'Segoe UI', Roboto, sans-serif;
             margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-        }
-
-        /* Hlavný kontajner imitujúci plochu */
-        .desktop-emulation {
             display: flex;
             justify-content: center;
-            align-items: flex-start;
-            padding: 20px;
-            gap: 20px;
-            flex-wrap: wrap;
+            align-items: center;
+            min-height: 100vh;
         }
 
-        /* Štýl mobilného telefónu */
+        /* Telefónny rám */
         .phone-frame {
             background: #000;
             width: 360px;
             height: 740px;
             border: 12px solid #222;
             border-radius: 40px;
-            overflow-y: auto;
             position: relative;
             box-shadow: 0 0 50px rgba(0,0,0,0.8);
-            scrollbar-width: none; /* Pre Firefox */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
-        .phone-frame::-webkit-scrollbar { display: none; } /* Pre Chrome/Safari */
 
-        /* Horná lišta telefónu (Notch) */
         .phone-notch {
             background: #222;
             height: 25px;
@@ -63,16 +54,29 @@
             transform: translateX(-50%);
             border-bottom-left-radius: 15px;
             border-bottom-right-radius: 15px;
-            z-index: 10;
+            z-index: 20;
         }
 
-        header {
-            padding: 40px 20px 10px;
-            text-align: center;
-            border-bottom: 1px solid #333;
+        /* Obsahové obrazovky */
+        .screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            overflow-y: auto;
+            padding-top: 30px;
         }
-        header h1 { font-size: 20px; margin: 0; color: #fff; }
-        header h2 { font-size: 16px; margin: 5px 0 0; color: #aaa; }
+
+        .screen.active { display: flex; }
+        .screen::-webkit-scrollbar { display: none; }
+
+        header, .detail-header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #222;
+        }
+
+        h1 { font-size: 20px; margin: 0; }
+        h2 { font-size: 14px; color: #888; margin: 5px 0 0; }
 
         /* Zoznam zápasov */
         .matches-list { padding: 15px; }
@@ -86,52 +90,27 @@
             position: relative;
             border: 2px solid transparent;
         }
-
-        /* Neónové okraje pre karty */
-        .match-card.fuchsia { border-color: var(--neon-fuchsia); box-shadow: 0 0 15px var(--neon-fuchsia); }
-        .match-card.cyan { border-color: var(--neon-cyan); box-shadow: 0 0 15px var(--neon-cyan); }
-
-        .match-card:hover { transform: scale(1.03); }
+        .match-card:active { transform: scale(0.95); }
+        .match-card.fuchsia { border-color: var(--neon-fuchsia); box-shadow: 0 0 10px rgba(255,0,255,0.3); }
+        .match-card.cyan { border-color: var(--neon-cyan); box-shadow: 0 0 10px rgba(0,242,255,0.3); }
 
         .league-badge {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.5);
-            padding: 2px 8px;
-            border-radius: 4px;
             font-size: 10px;
             text-transform: uppercase;
-            color: #eee;
+            color: #888;
+            margin-bottom: 10px;
         }
-        .match-teams { font-size: 16px; font-weight: bold; margin-top: 20px; text-align: center; }
-        .match-teams span { color: #888; font-weight: normal; margin: 0 5px; }
+        .match-teams { font-size: 16px; font-weight: bold; text-align: center; }
+        .match-teams span { color: #555; font-weight: normal; }
 
-        /* DETAIL ZÁPASU - Presne podľa obrázka */
-        #detail-screen {
-            display: none; /* Skrytý na začiatku */
-        }
-
-        .detail-header {
-            padding: 40px 20px 10px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid #333;
-        }
-        .back-btn { font-size: 24px; cursor: pointer; color: #fff; }
-        .detail-header h1 { font-size: 18px; margin: 0; flex: 1; text-align: center; }
-
-        .detail-content { padding: 20px; }
-        .detail-title { text-align: center; font-size: 20px; font-weight: bold; margin-bottom: 25px; }
-        .detail-title span { color: #888; font-weight: normal; }
-
-        /* Mriežka štatistík */
+        /* Detail */
+        .back-btn { position: absolute; left: 20px; top: 45px; font-size: 24px; cursor: pointer; color: var(--neon-cyan); z-index: 30; }
+        
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 12px;
+            padding: 20px;
         }
 
         .stat-card {
@@ -139,66 +118,54 @@
             border-radius: 10px;
             padding: 15px;
             text-align: center;
-            border: 2px solid transparent;
-            position: relative;
+            border: 1px solid #333;
         }
+        .stat-card.full { grid-column: 1 / -1; }
+        .stat-label { font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 8px; }
+        .stat-value { font-size: 22px; font-weight: bold; }
 
-        .stat-card .stat-label { font-size: 12px; color: #aaa; text-transform: uppercase; margin-bottom: 5px; }
-        .stat-card .stat-value { font-size: 24px; font-weight: bold; }
+        /* Progress bary */
+        .bar-bg { background: #222; height: 4px; border-radius: 2px; margin-top: 8px; overflow: hidden; }
+        .bar-fill { height: 100%; transition: width 1s ease-out; }
 
-        /* Farebné neónové okraje pre štatistiky */
-        .stat-card.yellow { border-color: var(--neon-yellow); box-shadow: 0 0 10px var(--neon-yellow); }
-        .stat-card.yellow .stat-value { color: var(--neon-yellow); }
-
-        .stat-card.purple { border-color: var(--neon-purple); box-shadow: 0 0 10px var(--neon-purple); }
-        .stat-card.purple .stat-value { color: var(--neon-purple); }
-
-        .stat-card.cyan { border-color: var(--neon-cyan); box-shadow: 0 0 10px var(--neon-cyan); }
-        .stat-card.cyan .stat-value { color: var(--neon-cyan); }
-
-        .stat-card.orange { border-color: var(--neon-orange); box-shadow: 0 0 10px var(--neon-orange); grid-column: 1 / -1; } /* Na celú šírku */
-        .stat-card.orange .stat-value { color: var(--neon-orange); }
-
-        /* AI Analýza box */
-        .ai-analysis-box {
-            background: rgba(0, 255, 136, 0.05);
-            border: 2px solid var(--neon-green);
-            box-shadow: 0 0 15px var(--neon-green);
-            border-radius: 12px;
+        .ai-box {
+            margin: 0 20px 20px;
             padding: 15px;
-            margin-top: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--neon-green);
+            background: rgba(0, 255, 136, 0.05);
         }
-        .ai-analysis-box h3 { color: var(--neon-green); margin: 0 0 10px; font-size: 16px; text-transform: uppercase; }
-        .ai-analysis-box p { color: #ddd; font-size: 14px; line-height: 1.5; margin: 0; font-style: italic; }
+        .ai-box h3 { color: var(--neon-green); margin-top: 0; font-size: 14px; }
+        .ai-box p { font-size: 13px; color: #ccc; line-height: 1.5; margin: 0; font-style: italic; }
 
     </style>
 </head>
 <body>
 
-<div class="desktop-emulation">
-    
-    <div class="phone-frame" id="list-phone">
-        <div class="phone-notch"></div>
+<div class="phone-frame">
+    <div class="phone-notch"></div>
+
+    <!-- Obrazovka 1: Zoznam -->
+    <div id="list-screen" class="screen active">
         <header>
-            <h1>PatoAnalitik ⚽</h1>
-            <h2>Dnešné Tipy</h2>
+            <h1>PatoAnalitik PRO ⚽</h1>
+            <h2 id="current-date-label">Dnešné analýzy</h2>
         </header>
         <div class="matches-list" id="matches-container">
-            </div>
-    </div>
-
-    <div class="phone-frame" id="detail-phone" style="display: none;">
-        <div class="phone-notch"></div>
-        <div id="detail-screen">
-            <div class="detail-header">
-                <div class="back-btn" onclick="closeDetail()">←</div>
-                <h1>PatoAnalitik</h1>
-                <div style="width:24px;"></div> </div>
-            <div class="detail-content" id="detail-content-area">
-                </div>
+            <p style="text-align:center; color:#555; padding:20px;">Načítavam dáta...</p>
         </div>
     </div>
 
+    <!-- Obrazovka 2: Detail -->
+    <div id="detail-screen" class="screen">
+        <div class="back-btn" onclick="showList()">←</div>
+        <div class="detail-header">
+            <h1 id="detail-teams-title">Zápas</h1>
+        </div>
+        <div id="detail-content">
+            <!-- Dynamický obsah -->
+        </div>
+    </div>
 </div>
 
 <script>
@@ -214,86 +181,96 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     
-    // Fixnutý dátum pre testovanie (ako na obrázku)
-    let currentDay = "20260330"; 
+    // Dátum vo formáte YYYYMMDD
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const currentDay = "20260330"; // Pre testovacie účely podľa tvojho zadania
 
     function loadMatches() {
         const container = document.getElementById('matches-container');
-        container.innerHTML = "<p style='text-align:center; padding:20px; color:#888;'>Načítavam...</p>";
 
-        db.collection("zapasy").where("timestamp", "==", currentDay).get().then(snap => {
+        db.collection("zapasy")
+          .where("timestamp", "==", currentDay)
+          .get()
+          .then(snap => {
             container.innerHTML = "";
-            if(snap.empty) { container.innerHTML = "<p style='text-align:center; padding:20px; color:#666;'>Žiadne tipy.</p>"; return; }
+            if(snap.empty) {
+                container.innerHTML = "<p style='text-align:center; color:#666;'>Na dnes nie sú pripravené žiadne tipy.</p>";
+                return;
+            }
 
-            let counter = 0;
-            snap.forEach(doc => {
-                let m = doc.data();
-                // Striedanie farieb okrajov (fuchsia / cyan)
-                let neonClass = counter % 2 === 0 ? 'fuchsia' : 'cyan';
-                
-                let card = document.createElement('div');
+            snap.forEach((doc, index) => {
+                const m = doc.data();
+                const neonClass = index % 2 === 0 ? 'fuchsia' : 'cyan';
+                const card = document.createElement('div');
                 card.className = `match-card ${neonClass}`;
-                card.onclick = () => openDetail(m);
+                card.onclick = () => showDetail(m);
                 card.innerHTML = `
                     <div class="league-badge">${m.liga || 'Liga'}</div>
                     <div class="match-teams">${m.zapas.replace(' vs ', ' <span>vs</span> ')}</div>
                 `;
                 container.appendChild(card);
-                counter++;
             });
-        });
+          })
+          .catch(err => {
+            console.error(err);
+            container.innerHTML = "<p style='text-align:center; color:red;'>Chyba pripojenia k databáze.</p>";
+          });
     }
 
-    function openDetail(m) {
-        // Skryť zoznam, zobraziť detail
-        document.getElementById('list-phone').style.display = 'none';
-        document.getElementById('detail-phone').style.display = 'block';
-        document.getElementById('detail-screen').style.display = 'block';
-
-        const contentArea = document.getElementById('detail-content-area');
+    function showDetail(m) {
+        document.getElementById('list-screen').classList.remove('active');
+        document.getElementById('detail-screen').classList.add('active');
         
-        contentArea.innerHTML = `
-            <div class="detail-title">${m.zapas.replace(' vs ', ' <span>vs</span> ')}</div>
-            
+        document.getElementById('detail-teams-title').innerHTML = m.zapas.replace(' vs ', '<br><span style="color:#555; font-size:14px;">vs</span><br>');
+
+        const detailContent = document.getElementById('detail-content');
+        detailContent.innerHTML = `
             <div class="stats-grid">
-                <div class="stat-card yellow">
-                    <div class="stat-label">Over 1.5</div>
-                    <div class="stat-value">${m.o15}%</div>
-                </div>
-                <div class="stat-card purple">
-                    <div class="stat-label">Over 2.5</div>
-                    <div class="stat-value">${m.o25}%</div>
-                </div>
-                <div class="stat-card purple">
+                ${createStatCard("Over 1.5", m.o15, "var(--neon-yellow)")}
+                ${createStatCard("Over 2.5", m.o25, "var(--neon-purple)")}
+                <div class="stat-card">
                     <div class="stat-label">BTTS</div>
-                    <div class="stat-value">${m.btts > 50 ? 'YES' : 'NO'}</div>
+                    <div class="stat-value" style="color: ${m.btts > 50 ? 'var(--neon-green)' : '#ff4444'}">
+                        ${m.btts > 50 ? 'ÁNO' : 'NIE'}
+                    </div>
                 </div>
-                <div class="stat-card cyan">
-                    <div class="stat-label">Corners</div>
-                    <div class="stat-value">${m.rohy}</div>
-                </div>
-                <div class="stat-card orange">
-                    <div class="stat-label">Cards</div>
-                    <div class="stat-value">${m.karty}</div>
+                ${createStatCard("Rohy", m.rohy, "var(--neon-cyan)", false)}
+                <div class="stat-card full">
+                    <div class="stat-label">Karty</div>
+                    <div class="stat-value" style="color: var(--neon-orange)">${m.karty}</div>
                 </div>
             </div>
-
-            <div class="ai-analysis-box">
-                <h3>AI analýza</h3>
-                <p>${m.ai}</p>
+            <div class="ai-box">
+                <h3>AI Analýza</h3>
+                <p>${m.ai || 'K tomuto zápasu zatiaľ nie je dostupný podrobný komentár.'}</p>
             </div>
         `;
     }
 
-    function closeDetail() {
-        // Skryť detail, zobraziť zoznam
-        document.getElementById('detail-phone').style.display = 'none';
-        document.getElementById('detail-screen').style.display = 'none';
-        document.getElementById('list-phone').style.display = 'block';
+    function createStatCard(label, value, color, isPercent = true) {
+        let barHtml = isPercent ? `
+            <div class="bar-bg">
+                <div class="bar-fill" style="width: ${value}%; background: ${color}; box-shadow: 0 0 8px ${color};"></div>
+            </div>
+        ` : '';
+
+        return `
+            <div class="stat-card">
+                <div class="stat-label">${label}</div>
+                <div class="stat-value" style="color: ${color}">${value}${isPercent ? '%' : ''}</div>
+                ${barHtml}
+            </div>
+        `;
     }
 
-    // Spustiť načítanie
+    function showList() {
+        document.getElementById('detail-screen').classList.remove('active');
+        document.getElementById('list-screen').classList.add('active');
+    }
+
+    // Spustenie
     loadMatches();
 </script>
+
 </body>
 </html>
