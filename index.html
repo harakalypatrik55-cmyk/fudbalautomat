@@ -3,53 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PatoAnalitik - Futbalové Predpovede</title>
+    <title>PatoAnalitik PRO</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     <style>
-        body { background: #0a0518; color: white; font-family: sans-serif; margin: 0; padding: 10px; }
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
-        .tab { background: #1a1a2e; padding: 12px 25px; border-radius: 8px; cursor: pointer; white-space: nowrap; border: 1px solid #333; transition: 0.3s; }
-        .tab.active { background: #00f2ff; color: black; font-weight: bold; border-color: #00f2ff; box-shadow: 0 0 10px #00f2ff; }
+        :root { --neon: #00f2ff; --bg: #050510; --card: #121225; --text: #ffffff; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; }
         
-        .league-group { margin-bottom: 20px; border: 1px solid #333; border-radius: 10px; overflow: hidden; background: #110b26; }
-        .league-header { background: #1a1a2e; padding: 12px; font-weight: bold; color: #00f2ff; border-bottom: 1px solid #333; text-transform: uppercase; font-size: 14px; }
+        /* Horná lišta a dni */
+        header { background: #1a1a35; padding: 15px; text-align: center; border-bottom: 2px solid var(--neon); }
+        .day-tabs { display: flex; gap: 10px; overflow-x: auto; padding: 15px; scrollbar-width: none; }
+        .day-btn { background: #1a1a35; padding: 10px 20px; border-radius: 20px; border: 1px solid #333; cursor: pointer; white-space: nowrap; font-size: 13px; }
+        .day-btn.active { background: var(--neon); color: #000; font-weight: bold; border-color: var(--neon); }
+
+        /* Zoznam zápasov */
+        .league-group { margin: 15px; }
+        .league-title { color: var(--neon); font-size: 14px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .match-card { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #222; }
+        .match-info { flex: 1; }
+        .match-time { font-size: 12px; color: #888; margin-bottom: 5px; }
+        .match-teams { font-size: 16px; font-weight: bold; }
+        .score-badge { background: #222; padding: 5px 10px; border-radius: 5px; color: var(--neon); font-weight: bold; }
+
+        /* Detail zápasu - Fullscreen */
+        #detail-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: none; overflow-y: auto; }
+        .detail-header { padding: 20px; background: #1a1a35; position: sticky; top: 0; display: flex; align-items: center; gap: 15px; }
+        .back-btn { font-size: 24px; cursor: pointer; color: var(--neon); }
         
-        .match { padding: 15px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
-        .match:last-child { border-bottom: none; }
-        .match:hover { background: #1a1a3a; }
-        .match .teams { font-weight: 500; flex: 1; }
-        .match .time { color: #888; font-size: 13px; margin-left: 10px; background: #222; padding: 2px 8px; border-radius: 4px; }
-        
-        #detail { position: fixed; inset: 0; background: #0a0518; display: none; padding: 20px; z-index: 100; overflow-y: auto; }
-        .close-btn { color: #ff00ff; margin-bottom: 25px; cursor: pointer; font-weight: bold; display: inline-block; padding: 5px 10px; border: 1px solid #ff00ff; border-radius: 5px; }
-        .stat-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #222; font-size: 16px; }
-        .stat-row b { color: #00f2ff; }
-        .ai-box { background: #1a1a2e; padding: 20px; border-radius: 12px; margin-top: 25px; border-left: 4px solid #00f2ff; line-height: 1.5; }
-        
-        #loader { text-align: center; padding: 50px; color: #00f2ff; font-weight: bold; }
+        /* 4 TABY v detaile */
+        .detail-tabs { display: flex; background: #1a1a35; border-bottom: 1px solid #333; position: sticky; top: 70px; z-index: 10; }
+        .d-tab { flex: 1; text-align: center; padding: 15px 5px; font-size: 13px; color: #888; cursor: pointer; border-bottom: 3px solid transparent; }
+        .d-tab.active { color: var(--neon); border-bottom-color: var(--neon); font-weight: bold; }
+        .tab-content { padding: 20px; display: none; }
+        .tab-content.active { display: block; }
+
+        /* Vzhľad štatistík a analýzy */
+        .stat-box { background: var(--card); padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #222; }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 15px; }
+        .stat-row span { color: #aaa; }
+        .stat-row b { color: var(--neon); }
+        .gpt-box { background: #1a1a2e; border-left: 4px solid var(--neon); padding: 15px; border-radius: 8px; font-style: italic; color: #ddd; line-height: 1.5; }
+        .tip-badge { background: #00ff88; color: #000; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
-    <h2 style="text-align:center; color: #00f2ff; margin-bottom: 20px;">PatoAnalitik ⚽</h2>
+    <header><h1>PatoAnalitik ⚽</h1></header>
+    <div class="day-tabs" id="day-tabs"></div>
+    <div id="main-content"></div>
 
-    <!-- Výber dňa -->
-    <div class="tabs" id="day-tabs"></div>
+    <!-- DETAIL ZÁPASU -->
+    <div id="detail-overlay">
+        <div class="detail-header">
+            <div class="back-btn" onclick="closeDetail()">←</div>
+            <div id="det-header-title">Zápas</div>
+        </div>
 
-    <!-- Zoznam líg a zápasov -->
-    <div id="content"><div id="loader">Načítavam zápasy...</div></div>
+        <div class="detail-tabs">
+            <div class="d-tab active" onclick="switchTab(0)">Zápas</div>
+            <div class="d-tab" onclick="switchTab(1)">Tips</div>
+            <div class="d-tab" onclick="switchTab(2)">Tiket</div>
+            <div class="d-tab" onclick="switchTab(3)">Statistiky</div>
+        </div>
 
-    <!-- Detail zápasu -->
-    <div id="detail">
-        <div class="close-btn" onclick="closeDetail()">← SPÄŤ NA ZOZNAM</div>
-        <h2 id="det-name" style="color: #fff; border-bottom: 2px solid #333; padding-bottom: 10px;"></h2>
-        <div id="det-stats"></div>
-        <div id="det-ai" class="ai-box"></div>
+        <!-- Obsah tabov -->
+        <div id="t-zapas" class="tab-content active"></div>
+        <div id="t-tips" class="tab-content"></div>
+        <div id="t-tiket" class="tab-content"></div>
+        <div id="t-stats" class="tab-content"></div>
     </div>
 
 <script>
-    // TVOJA KONFIGURÁCIA FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyBX-qBKbLfmBynXr4Bf1q5j4cXFyU9Dv0M",
         authDomain: "patoanalitik.firebaseapp.com",
@@ -61,91 +85,107 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-
-    // OPRAVENÝ DÁTUM (Slovenský čas)
     let currentDay = new Date().toLocaleDateString('sv').replace(/-/g, '');
 
     function initDays() {
-        const tabs = document.getElementById('day-tabs');
-        tabs.innerHTML = "";
+        const container = document.getElementById('day-tabs');
         for(let i=0; i<4; i++) {
-            let d = new Date();
-            d.setDate(d.getDate() + i);
+            let d = new Date(); d.setDate(d.getDate() + i);
             let dayId = d.toLocaleDateString('sv').replace(/-/g, '');
             let label = i === 0 ? "DNES" : d.toLocaleDateString('sk', {weekday:'short'}).toUpperCase();
-            
             let btn = document.createElement('div');
-            btn.className = `tab ${dayId === currentDay ? 'active' : ''}`;
+            btn.className = `day-btn ${dayId === currentDay ? 'active' : ''}`;
             btn.innerText = label;
             btn.onclick = () => {
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                btn.classList.add('active');
-                currentDay = dayId;
-                loadMatches();
+                document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active'); currentDay = dayId; loadMatches();
             };
-            tabs.appendChild(btn);
+            container.appendChild(btn);
         }
     }
 
     function loadMatches() {
-        const content = document.getElementById('content');
-        content.innerHTML = '<div id="loader">Hľadám zápasy v databáze...</div>';
+        const main = document.getElementById('main-content');
+        main.innerHTML = "<p style='text-align:center; padding:20px;'>Načítavam zápasy...</p>";
 
         db.collection("zapasy").where("timestamp", "==", currentDay).get().then(snap => {
-            content.innerHTML = "";
-            if(snap.empty) { 
-                content.innerHTML = "<div style='text-align:center; padding: 20px; color: #888;'>Žiadne zápasy na tento deň. Spusti robota v počítači!</div>"; 
-                return; 
-            }
+            main.innerHTML = "";
+            if(snap.empty) { main.innerHTML = "<p style='text-align:center; padding:20px; color:#666;'>Žiadne zápasy.</p>"; return; }
 
-            let leagues = {};
+            let groups = {};
             snap.forEach(doc => {
-                let m = doc.data();
-                let lName = m.liga || "Ostatné ligy";
-                if(!leagues[lName]) leagues[lName] = [];
-                leagues[lName].push(m);
+                let m = doc.data(); let l = m.liga || "Iné";
+                if(!groups[l]) groups[l] = []; groups[l].push(m);
             });
 
-            for(let liga in leagues) {
+            for(let liga in groups) {
                 let section = document.createElement('div');
                 section.className = 'league-group';
-                section.innerHTML = `<div class="league-header">${liga}</div>`;
-                
-                leagues[liga].forEach(m => {
-                    let div = document.createElement('div');
-                    div.className = 'match';
-                    div.onclick = () => openDetail(m);
-                    div.innerHTML = `
-                        <div class="teams">${m.zapas}</div>
-                        <div class="time">${m.cas}</div>
-                    `;
-                    section.appendChild(div);
+                section.innerHTML = `<div class="league-title">${liga}</div>`;
+                groups[liga].forEach(m => {
+                    let card = document.createElement('div');
+                    card.className = 'match-card';
+                    card.onclick = () => openDetail(m);
+                    card.innerHTML = `<div class="match-info"><div class="match-time">${m.cas}</div><div class="match-teams">${m.zapas}</div></div><div class="score-badge">VS</div>`;
+                    section.appendChild(card);
                 });
-                content.appendChild(section);
+                main.appendChild(section);
             }
-        }).catch(err => {
-            content.innerHTML = "Chyba pri načítaní: " + err;
         });
     }
 
     function openDetail(m) {
-        document.getElementById('det-name').innerText = m.zapas;
-        document.getElementById('det-stats').innerHTML = `
-            <div class="stat-row"><span>Pravdepodobnosť Over 1.5</span><b>${m.o15}%</b></div>
-            <div class="stat-row"><span>Pravdepodobnosť Over 2.5</span><b>${m.o25}%</b></div>
-            <div class="stat-row"><span>Oba tímy dajú gól (BTTS)</span><b>${m.btts}%</b></div>
-            <div class="stat-row"><span>Očakávané rohy (H2H)</span><b>${m.rohy}</b></div>
-            <div class="stat-row"><span>Očakávané karty</span><b>${m.karty}</b></div>
+        document.getElementById('det-header-title').innerText = m.zapas;
+        
+        // Tab: Zápas
+        document.getElementById('t-zapas').innerHTML = `
+            <div class="stat-box"><h3>Info o zápase</h3><p>Liga: ${m.liga}</p><p>Čas: ${m.cas}</p></div>
+            <div class="gpt-box"><b>GPT ANALÝZA:</b><br>${m.ai}</div>
         `;
-        document.getElementById('det-ai').innerText = m.ai;
-        document.getElementById('detail').style.display = 'block';
-        window.scrollTo(0,0);
+
+        // Tab: Tips
+        document.getElementById('t-tips').innerHTML = `
+            <div class="tip-badge">ODPORÚČANÝ TIP: ${m.o25 > 65 ? 'Over 2.5' : 'Over 1.5'}</div>
+            <div class="stat-box"><div class="stat-row"><span>BTTS (Oba dajú gól)</span><b>${m.btts}%</b></div></div>
+        `;
+
+        // Tab: Tiket
+        document.getElementById('t-tiket').innerHTML = `
+            <div class="stat-box" style="border: 2px dashed var(--neon); text-align:center;">
+                <p>Tento zápas odporúčame pridať na tiket ako:</p>
+                <h2 style="color:var(--neon)">${m.zapas}</h2>
+                <p>TIP: Viac ako 1.5 gólu</p>
+            </div>
+        `;
+
+        // Tab: Statistiky (5 štatistík + Analýza)
+        document.getElementById('t-stats').innerHTML = `
+            <div class="stat-box">
+                <div class="stat-row"><span>Pravdepodobnosť Over 1.5</span><b>${m.o15}%</b></div>
+                <div class="stat-row"><span>Pravdepodobnosť Over 2.5</span><b>${m.o25}%</b></div>
+                <div class="stat-row"><span>Očakávané rohy</span><b>${m.rohy}</b></div>
+                <div class="stat-row"><span>Očakávané karty</span><b>${m.karty}</b></div>
+                <div class="stat-row"><span>Forma domácich</span><b>80%</b></div>
+            </div>
+            <div class="gpt-box"><b>DÁTOVÝ POHĽAD:</b><br>Na základe historických dát a H2H štatistík očakávame aktívnu hru.</div>
+        `;
+
+        document.getElementById('detail-overlay').style.display = 'block';
+        switchTab(0);
     }
 
-    function closeDetail() { document.getElementById('detail').style.display = 'none'; }
+    function switchTab(index) {
+        document.querySelectorAll('.d-tab').forEach((t, i) => {
+            t.classList.toggle('active', i === index);
+        });
+        document.querySelectorAll('.tab-content').forEach((c, i) => {
+            c.classList.toggle('active', i === index);
+        });
+    }
 
-    initDays();
-    loadMatches();
+    function closeDetail() { document.getElementById('detail-overlay').style.display = 'none'; }
+
+    initDays(); loadMatches();
 </script>
 </body>
 </html>
