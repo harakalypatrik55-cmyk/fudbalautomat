@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neural Pulse 7.0 - PatoAnalitik Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #0a0518;
+            --irid-cyan: #00f2ff;
+            --irid-pink: #ff00ff;
+            --irid-purple: #7000ff;
+            --neon-green: #00ffaa;
+            --neon-yellow: #ffea00;
+            --glass: rgba(255, 255, 255, 0.08);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        body { background: #000; color: #fff; font-family: 'Orbitron', sans-serif; margin: 0; overflow: hidden; }
+
+        .app-shell {
+            width: 100%; max-width: 450px; height: 100vh; margin: auto;
+            background: var(--bg-main); position: relative; overflow: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(112, 0, 255, 0.3) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 242, 255, 0.25) 0%, transparent 40%);
+        }
+
+        .date-strip {
+            display: flex; justify-content: space-between; padding: 15px;
+            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .date-item { text-align: center; cursor: pointer; opacity: 0.4; transition: 0.3s; padding: 5px 10px; border-radius: 10px; }
+        .date-item.active { opacity: 1; background: var(--glass); border: 1px solid var(--irid-cyan); color: var(--irid-cyan); box-shadow: 0 0 15px rgba(0,242,255,0.2); }
+        .date-item span { display: block; font-size: 8px; font-family: 'JetBrains Mono'; }
+
+        .main-container { height: calc(100vh - 145px); overflow-y: auto; padding: 15px; }
+        
+        .match-card { 
+            background: rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; margin-bottom: 8px; 
+            display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05);
+            cursor: pointer;
+        }
+        .match-card .prob { color: var(--neon-green); font-weight: 900; text-shadow: 0 0 8px var(--neon-green); }
+
+        #detail-view {
+            position: absolute; inset: 0; background: var(--bg-main); z-index: 10000;
+            display: none; padding: 20px; transform: translateY(100%); transition: 0.5s cubic-bezier(0.19, 1, 0.22, 1); overflow-y: auto;
+        }
+        #detail-view.open { display: block; transform: translateY(0); }
+
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+        .stat-box { background: var(--glass); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px; text-align: center; }
+        .stat-box span { font-size: 8px; opacity: 0.6; display: block; margin-bottom: 4px; }
+        .stat-box b { font-size: 18px; color: var(--irid-cyan); }
+
+        .gpt-oracle-box {
+            background: rgba(112, 0, 255, 0.1); border: 1px solid var(--irid-purple); border-left: 4px solid var(--irid-pink);
+            padding: 15px; border-radius: 12px; margin-top: 10px; position: relative;
+        }
+        #det-gpt { font-family: 'JetBrains Mono'; font-size: 11px; line-height: 1.5; color: #ddd; }
+
+        nav {
+            position: absolute; bottom: 0; width: 100%; height: 75px;
+            background: rgba(10, 5, 25, 0.95); backdrop-filter: blur(20px);
+            display: flex; justify-content: space-around; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); z-index: 2000;
+        }
+        .nav-link { color: rgba(255,255,255,0.3); font-size: 9px; text-align: center; flex: 1; cursor: pointer; transition: 0.3s; }
+        .nav-link.active { color: var(--irid-cyan); text-shadow: 0 0 10px var(--irid-cyan); }
+    </style>
+</head>
+<body>
+
+<div class="app-shell">
+    <div class="date-strip">
+        <div style="color:var(--neon-yellow); font-size:9px; align-self:center; border:1px solid; padding:4px; border-radius:4px;">LIVE DATA</div>
+        <div class="date-item active"><span>DNES</span><b>30</b></div>
+        <div class="date-item"><span>ZAJTRA</span><b>31</b></div>
+    </div>
+
+    <div class="main-container" id="match-list-container">
+        <p style="text-align:center; opacity:0.5; margin-top:50px;">PRIPÁJAM SA NA ORACLE SERVER...</p>
+    </div>
+
+    <!-- DETAIL PANEL -->
+    <div id="detail-view">
+        <div onclick="closeMatch()" style="color:var(--irid-pink); font-size:10px; cursor:pointer; margin-bottom:15px;">[ SPÄŤ ]</div>
+        <h2 id="det-title" style="text-align:center; font-size:15px; margin-bottom:20px;"></h2>
+
+        <div class="stat-grid">
+            <div class="stat-box"><span>OVER 1.5</span><b id="s1">0%</b></div>
+            <div class="stat-box"><span>OVER 2.5</span><b id="s2">0%</b></div>
+            <div class="stat-box"><span>BTTS</span><b id="s3">0%</b></div>
+            <div class="stat-box"><span>ROHY</span><b id="s4">0</b></div>
+        </div>
+
+        <div class="gpt-oracle-box">
+            <div id="det-gpt"></div>
+        </div>
+    </div>
+
+    <nav>
+        <div class="nav-link active"><i>⚽</i>MATCHES</div>
+        <div class="nav-link"><i>⭐</i>TIPS</div>
+        <div class="nav-link"><i>📊</i>STATS</div>
+    </nav>
+</div>
+
+<!-- FIREBASE SDK (COMPAT VERSION) -->
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+<script>
+    // TVOJA KONFIGURÁCIA Z FOTKY
+    const firebaseConfig = {
+        apiKey: "AIzaSyBX-qBBbLmmBynXr4BF1q4cXyU9Dv0M",
+        authDomain: "patoanalitik.firebaseapp.com",
+        projectId: "patoanalitik",
+        storageBucket: "patoanalitik.firebasestorage.app",
+        messagingSenderId: "585647962898",
+        appId: "1:585647962898:web:d850a3983c3e473e49d1cb",
+        measurementId: "G-6ZPDGNJH9Y"
+    };
+
+    // Inicializácia
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Načítanie dát
+    function loadLiveMatches() {
+        const container = document.getElementById('match-list-container');
+        
+        db.collection("zapasy").orderBy("timestamp", "desc").limit(20).onSnapshot((snapshot) => {
+            if (snapshot.empty) {
+                container.innerHTML = "<p style='text-align:center; opacity:0.5;'>Zatiaľ žiadne dáta. Spusti robota v PC!</p>";
+                return;
+            }
+
+            container.innerHTML = "";
+            snapshot.forEach((doc) => {
+                const m = doc.data();
+                const card = document.createElement('div');
+                card.className = 'match-card';
+                card.onclick = () => openMatch(m.zapas, m.o15, m.o25, m.btts, m.rohy, m.ai);
+                card.innerHTML = `
+                    <div><b>${m.zapas}</b><br><small style="color:var(--irid-purple)">${m.cas} • ${m.datum}</small></div>
+                    <div class="prob">${m.o25}%</div>
+                `;
+                container.appendChild(card);
+            });
+        });
+    }
+
+    function openMatch(title, p1, p2, p3, rohy, aiText) {
+        document.getElementById('det-title').innerText = title;
+        document.getElementById('s1').innerText = p1 + "%";
+        document.getElementById('s2').innerText = p2 + "%";
+        document.getElementById('s3').innerText = p3 + "%";
+        document.getElementById('s4').innerText = rohy;
+        document.getElementById('det-gpt').innerText = aiText;
+        
+        const view = document.getElementById('detail-view');
+        view.style.display = 'block';
+        setTimeout(() => view.classList.add('open'), 10);
+    }
+
+    function closeMatch() {
+        const view = document.getElementById('detail-view');
+        view.classList.remove('open');
+        setTimeout(() => view.style.display = 'none', 500);
+    }
+
+    // Spusti načítanie
+    loadLiveMatches();
+</script>
+
+</body>
+</html>
