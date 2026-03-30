@@ -3,13 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neural Pulse 7.0 - PatoAnalitik</title>
+    <title>Neural Pulse 7.0 - Oracle Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-
     <style>
         :root {
             --bg-main: #0a0518;
@@ -24,6 +19,7 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { background: #000; color: #fff; font-family: 'Orbitron', sans-serif; margin: 0; overflow: hidden; }
 
+        /* VIVID BACKGROUND */
         .app-shell {
             width: 100%; max-width: 450px; height: 100vh; margin: auto;
             background: var(--bg-main); position: relative; overflow: hidden;
@@ -32,6 +28,7 @@
                 radial-gradient(circle at 90% 80%, rgba(0, 242, 255, 0.25) 0%, transparent 40%);
         }
 
+        /* HEADER & DATES */
         .date-strip {
             display: flex; justify-content: space-between; padding: 15px;
             background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px);
@@ -46,20 +43,26 @@
         .page-section.active { display: block; animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+        /* ACCORDION */
+        .league-group { margin-bottom: 12px; border-radius: 15px; background: var(--glass); border: 1px solid rgba(255,255,255,0.1); overflow: hidden; }
+        .league-header { padding: 15px; display: flex; justify-content: space-between; cursor: pointer; font-size: 11px; color: var(--irid-cyan); font-weight: bold; }
+        .match-list { display: none; padding: 10px; }
+        .league-group.open .match-list { display: block; }
+
         .match-card { 
             background: rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; margin-bottom: 8px; 
             display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05);
-            cursor: pointer;
         }
-        .match-card:active { background: var(--glass); }
         .match-card .prob { color: var(--neon-green); font-weight: 900; text-shadow: 0 0 8px var(--neon-green); }
 
+        /* DETAIL PANEL */
         #detail-view {
             position: absolute; inset: 0; background: var(--bg-main); z-index: 10000;
             display: none; padding: 20px; transform: translateY(100%); transition: 0.5s cubic-bezier(0.19, 1, 0.22, 1); overflow-y: auto;
         }
         #detail-view.open { display: block; transform: translateY(0); }
 
+        /* TEAM LOGOS IN DETAIL */
         .detail-header { display: flex; justify-content: space-around; align-items: center; margin: 20px 0; }
         .team-logo-circle {
             width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--irid-purple);
@@ -67,11 +70,13 @@
             font-size: 18px; font-weight: 900; color: #fff; box-shadow: 0 0 20px rgba(112, 0, 255, 0.3);
         }
 
+        /* STATS GRID */
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
         .stat-box { background: var(--glass); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px; text-align: center; }
         .stat-box span { font-size: 8px; opacity: 0.6; display: block; margin-bottom: 4px; }
         .stat-box b { font-size: 18px; color: var(--irid-cyan); }
 
+        /* GPT ORACLE BOX */
         .gpt-oracle-box {
             background: rgba(112, 0, 255, 0.1); border: 1px solid var(--irid-purple); border-left: 4px solid var(--irid-pink);
             padding: 15px; border-radius: 12px; margin-top: 10px; position: relative;
@@ -79,147 +84,160 @@
         .gpt-oracle-box::before { content: "AI ORACLE ANALYSIS"; position: absolute; top: -8px; left: 10px; background: var(--irid-purple); font-size: 7px; padding: 2px 6px; border-radius: 4px; }
         #det-gpt { font-family: 'JetBrains Mono'; font-size: 11px; line-height: 1.5; color: #ddd; }
 
+        /* NAVIGATION */
         nav {
             position: absolute; bottom: 0; width: 100%; height: 75px;
             background: rgba(10, 5, 25, 0.95); backdrop-filter: blur(20px);
             display: flex; justify-content: space-around; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); z-index: 2000;
         }
-        .nav-link { color: var(--irid-cyan); font-size: 9px; text-align: center; flex: 1; text-shadow: 0 0 10px var(--irid-cyan); }
+        .nav-link { color: rgba(255,255,255,0.3); font-size: 9px; text-align: center; flex: 1; cursor: pointer; transition: 0.3s; }
         .nav-link i { display: block; font-size: 20px; margin-bottom: 4px; font-style: normal; }
+        .nav-link.active { color: var(--irid-cyan); text-shadow: 0 0 10px var(--irid-cyan); }
     </style>
 </head>
 <body>
 
 <div class="app-shell">
-    <div class="date-strip" id="date-ui"></div>
+    <!-- DATE STRIP -->
+    <div class="date-strip">
+        <div style="color:var(--neon-yellow); font-size:9px; align-self:center; border:1px solid; padding:4px; border-radius:4px;">HISTORY</div>
+        <div class="date-item active"><span>DNES</span><b>28</b></div>
+        <div class="date-item"><span>NED</span><b>29</b></div>
+        <div class="date-item"><span>PON</span><b>30</b></div>
+        <div class="date-item"><span>UTO</span><b>31</b></div>
+    </div>
 
     <div class="main-container">
+        <!-- SEKCIA: MATCHES -->
         <section id="sect-matches" class="page-section active">
-            <div id="matches-container">
-                <div style="text-align:center; padding-top:50px; opacity:0.5;">NAČÍTAVAM...</div>
+            <div class="league-group">
+                <div class="league-header" onclick="toggleLeague(this)">PREMIER LEAGUE <span>▼</span></div>
+                <div class="match-list">
+                    <div class="match-card" onclick="openMatch('Arsenal vs Liverpool', 'ARS', 'LIV', 82, 64, 55, 76, 88, 'AI predikcia: Arsenal doma tlačí, Liverpool kontruje. Očakávame agresívny zápas s vysokým počtom rohových kopov (priemer 9.2). Karty budú udelené v druhom polčase.')">
+                        <div><b>Arsenal vs Liverpool</b><br><small style="color:var(--irid-purple)">17:30 • ANALYZED</small></div>
+                        <div class="prob">88%</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="league-group">
+                <div class="league-header" onclick="toggleLeague(this)">BUNDESLIGA <span>▼</span></div>
+                <div class="match-list">
+                    <div class="match-card" onclick="openMatch('Bayern vs Dortmund', 'FCB', 'BVB', 91, 85, 77, 42, 92, 'AI predikcia: Bayern v Allianz Arene dominuje. Dortmund má oslabenú obranu. Rohy 7.5+ je takmer istota pri tomto štýle hry.')">
+                        <div><b>Bayern vs Dortmund</b><br><small style="color:var(--irid-purple)">18:30 • ANALYZED</small></div>
+                        <div class="prob">94%</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- OSTATNÉ SEKCIE -->
+        <section id="sect-tips" class="page-section"><div style="text-align:center; padding-top:50px; opacity:0.5;">TOP_VALUE_TIPS_LOADED</div></section>
+        <section id="sect-ticket" class="page-section"><div style="text-align:center; padding-top:50px; opacity:0.5;">NO_ACTIVE_TICKETS</div></section>
+        <section id="sect-stats" class="page-section">
+            <div class="stat-box" style="margin-bottom:15px;"><span style="color:var(--neon-green)">PROFIT</span><b style="font-size:30px;">+1,420€</b></div>
+            <div class="stat-grid">
+                <div class="stat-box"><span>ROI</span><b>14.2%</b></div>
+                <div class="stat-box"><span>SUCCESS</span><b>76%</b></div>
             </div>
         </section>
     </div>
 
+    <!-- DETAIL PANEL (Zápas) -->
     <div id="detail-view">
         <div onclick="closeMatch()" style="color:var(--irid-pink); font-size:10px; cursor:pointer; margin-bottom:15px;">[ SPÄŤ ]</div>
+        
         <div class="detail-header">
             <div class="team-logo-circle" id="logo1">?</div>
             <div style="font-weight:900; color:var(--neon-yellow)">VS</div>
             <div class="team-logo-circle" id="logo2" style="border-color:var(--irid-cyan)">?</div>
         </div>
-        <h2 id="det-title" style="text-align:center; font-size:14px; margin-bottom:20px;"></h2>
+
+        <h2 id="det-title" style="text-align:center; font-size:15px; margin-bottom:20px;"></h2>
+
         <div class="stat-grid">
             <div class="stat-box"><span>OVER 1.5</span><b id="s1">0%</b></div>
             <div class="stat-box"><span>OVER 2.5</span><b id="s2">0%</b></div>
             <div class="stat-box"><span>BTTS</span><b id="s3">0%</b></div>
-            <div class="stat-box"><span>KARTY</span><b id="s4">0</b></div>
-            <div class="stat-box" style="grid-column: span 2;">
-                <span>ROHOVÉ KOPY</span><b id="s5">0</b>
+            <div class="stat-box"><span>KARTY 3.5+</span><b id="s4" style="color:var(--irid-pink)">0%</b></div>
+            <div class="stat-box" style="grid-column: span 2; border-color:var(--neon-yellow)">
+                <span>ROHOVÉ KOPY 7.5+</span><b id="s5" style="color:var(--neon-yellow)">0%</b>
             </div>
         </div>
-        <div class="gpt-oracle-box"><div id="det-gpt"></div></div>
+
+        <!-- GPT BOX -->
+        <div class="gpt-oracle-box">
+            <div id="det-gpt"></div>
+        </div>
     </div>
 
+    <!-- SPODNÉ MENU -->
     <nav>
-        <div class="nav-link"><i>⚽</i>MATCHES</div>
-        <div class="nav-link" style="opacity: 0.3;"><i>📊</i>STATS</div>
+        <div class="nav-link active" onclick="showPage('sect-matches', this)"><i>⚽</i>MATCHES</div>
+        <div class="nav-link" onclick="showPage('sect-tips', this)"><i>⭐</i>TIPS</div>
+        <div class="nav-link" onclick="showPage('sect-ticket', this)"><i>🎫</i>TICKET</div>
+        <div class="nav-link" onclick="showPage('sect-stats', this)"><i>📊</i>STATS</div>
     </nav>
 </div>
 
 <script>
-    // --- TVOJA KONFIGURÁCIA Z FOTKY ---
-    const firebaseConfig = {
-        apiKey: "AIzaSyBX-qBKbLfmBynXr4Bf1q5j4cXFyU9Dv0M",
-        authDomain: "patoanalitik.firebaseapp.com",
-        projectId: "patoanalitik",
-        storageBucket: "patoanalitik.firebasestorage.app",
-        messagingSenderId: "585647962898",
-        appId: "1:585647962898:web:d050a3983c3e473e49d1cb",
-        measurementId: "G-6ZPDGNJH9Y"
-    };
+    const vibrate = (ms) => { if (navigator.vibrate) navigator.vibrate(ms); };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    function getDates() {
-        const dates = [];
-        for(let i=0; i<4; i++) {
-            const d = new Date();
-            d.setDate(d.getDate() + i);
-            dates.push({
-                display: i === 0 ? "DNES" : d.toLocaleDateString('sk', {weekday:'short'}).toUpperCase(),
-                day: d.getDate(),
-                full: d.getFullYear() + "" + String(d.getMonth() + 1).padStart(2, '0') + "" + String(d.getDate()).padStart(2, '0')
-            });
-        }
-        return dates;
+    // PREPÍNANIE STRÁNOK
+    function showPage(pageId, navEl) {
+        vibrate(10);
+        document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        navEl.classList.add('active');
     }
 
-    let selectedDate = getDates()[0].full;
-
-    function renderDateStrip() {
-        const ui = document.getElementById('date-ui');
-        ui.innerHTML = '<div style="color:var(--neon-yellow); font-size:9px; align-self:center; border:1px solid; padding:4px; border-radius:4px;">LIVE</div>';
-        getDates().forEach(d => {
-            const item = document.createElement('div');
-            item.className = `date-item ${d.full === selectedDate ? 'active' : ''}`;
-            item.innerHTML = `<span>${d.display}</span><b>${d.day}</b>`;
-            item.onclick = () => { selectedDate = d.full; renderDateStrip(); loadMatches(); };
-            ui.appendChild(item);
-        });
+    // ROZBALOVANIE LÍG
+    function toggleLeague(el) {
+        vibrate(5);
+        el.parentElement.classList.toggle('open');
     }
 
-    function loadMatches() {
-        const container = document.getElementById('matches-container');
-        container.innerHTML = '<div style="text-align:center; padding-top:30px; color:var(--irid-cyan)">PRIPÁJAM...</div>';
-
-        db.collection("zapasy")
-          .where("timestamp", "==", selectedDate)
-          .get()
-          .then(snap => {
-            container.innerHTML = "";
-            if(snap.empty) {
-                container.innerHTML = '<div style="text-align:center; padding-top:30px; opacity:0.3;">ŽIADNE DÁTA</div>';
-                return;
-            }
-            snap.forEach(doc => {
-                const m = doc.data();
-                const card = document.createElement('div');
-                card.className = 'match-card';
-                card.onclick = () => openMatch(m.zapas, m.t1, m.t2, m.o15, m.o25, m.btts, m.karty, m.rohy, m.ai);
-                card.innerHTML = `<div><b>${m.zapas}</b><br><small style="color:var(--irid-purple)">${m.cas || '19:00'}</small></div><div class="prob">${m.o15}%</div>`;
-                container.appendChild(card);
-            });
-          })
-          .catch(err => {
-              container.innerHTML = "Chyba: " + err.message;
-          });
-    }
-
+    // OTVORENIE ZÁPASU
     function openMatch(title, t1, t2, p1, p2, p3, p4, p5, gptText) {
+        vibrate(30);
         const view = document.getElementById('detail-view');
         document.getElementById('det-title').innerText = title;
-        document.getElementById('logo1').innerText = t1.substring(0,2).toUpperCase();
-        document.getElementById('logo2').innerText = t2.substring(0,2).toUpperCase();
+        document.getElementById('logo1').innerText = t1;
+        document.getElementById('logo2').innerText = t2;
+        
         view.style.display = 'block';
         setTimeout(() => view.classList.add('open'), 10);
-        document.getElementById('s1').innerText = p1 + "%";
-        document.getElementById('s2').innerText = p2 + "%";
-        document.getElementById('s3').innerText = p3 + "%";
-        document.getElementById('s4').innerText = p4;
-        document.getElementById('s5').innerText = p5;
-        document.getElementById('det-gpt').innerText = gptText;
+
+        // Percentá animácia
+        const anim = (id, target) => {
+            let c = 0; let el = document.getElementById(id);
+            let t = setInterval(() => {
+                if(c >= target){ clearInterval(t); el.innerText = target + "%"; }
+                else { c++; el.innerText = c + "%"; }
+            }, 8);
+        };
+        anim('s1', p1); anim('s2', p2); anim('s3', p3); anim('s4', p4); anim('s5', p5);
+
+        // GPT Typing Effect
+        const gptDiv = document.getElementById('det-gpt');
+        gptDiv.innerText = "";
+        let i = 0;
+        let typing = setInterval(() => {
+            if (i < gptText.length) {
+                gptDiv.innerText += gptText.charAt(i);
+                i++;
+            } else { clearInterval(typing); }
+        }, 15);
     }
 
     function closeMatch() {
+        vibrate(10);
         const view = document.getElementById('detail-view');
         view.classList.remove('open');
         setTimeout(() => view.style.display = 'none', 500);
     }
-
-    renderDateStrip();
-    loadMatches();
 </script>
+
 </body>
 </html>
