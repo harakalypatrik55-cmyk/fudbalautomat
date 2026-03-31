@@ -12,34 +12,34 @@
         :root { --bg-deep: #0a0118; --neon-magenta: #ff00ff; --neon-cyan: #00f2ff; --neon-green: #00ff9f; --neon-purple: #bc13fe; --neon-yellow: #ffea00; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #000; color: #fff; font-family: 'Orbitron', sans-serif; margin: 0; overflow: hidden; }
+        
         .app-shell { width: 100%; max-width: 450px; height: 100vh; margin: auto; background: var(--bg-deep); position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
         .main-container { height: calc(100vh - 80px); overflow-y: auto; padding: 20px; }
+        
         .page-section { display: none; }
         .page-section.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .cyber-card { background: rgba(255, 255, 255, 0.03); border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.08); position: relative; }
+        .cyber-card { background: rgba(255, 255, 255, 0.03); border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.08); }
         .match-row { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
         .prob-badge { border: 1px solid var(--neon-green); color: var(--neon-green); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 900; }
 
-        .ticket-header { display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
-        .ticket-id { color: var(--neon-magenta); font-size: 10px; font-weight: 900; letter-spacing: 1px; }
-        .ticket-odds { color: var(--neon-yellow); font-weight: 900; font-size: 16px; text-shadow: 0 0 10px rgba(255, 234, 0, 0.3); }
+        .ticket-header { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
+        .ticket-id { color: var(--neon-magenta); font-size: 10px; font-weight: 900; }
+        .ticket-odds { color: var(--neon-yellow); font-weight: 900; font-size: 16px; }
         .ticket-content { font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.7; color: #eee; }
 
         /* DETAIL PANEL */
         #detail-view { position: absolute; inset: 0; background: #060112; z-index: 10000; display: none; padding: 25px 20px; transform: translateY(100%); transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); overflow-y: auto; }
         #detail-view.open { display: block; transform: translateY(0); }
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 25px 0; }
-        .stat-square { background: rgba(255,255,255,0.02); height: 95px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); }
-        .stat-square span { font-size: 8px; opacity: 0.5; margin-bottom: 8px; letter-spacing: 1px; text-align: center; }
-        .stat-square b { font-size: 22px; font-weight: 900; }
-
-        .gpt-box { background: rgba(188, 19, 254, 0.05); border: 1px solid var(--neon-purple); border-radius: 15px; padding: 18px; font-size: 11px; font-family: 'JetBrains Mono', monospace; line-height: 1.6; }
+        .stat-square { background: rgba(255,255,255,0.03); height: 90px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); }
+        .stat-square span { font-size: 8px; opacity: 0.5; margin-bottom: 8px; text-align: center; letter-spacing: 1px; }
+        .stat-square b { font-size: 20px; font-weight: 900; }
 
         nav { position: absolute; bottom: 0; width: 100%; height: 80px; background: rgba(10, 10, 20, 0.98); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); }
         .nav-link { color: rgba(255,255,255,0.3); font-size: 10px; text-align: center; cursor: pointer; transition: 0.3s; }
-        .nav-link.active { color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan); }
+        .nav-link.active { color: var(--neon-cyan); }
         .nav-link i { display: block; font-size: 22px; margin-bottom: 5px; font-style: normal; }
     </style>
 </head>
@@ -49,43 +49,41 @@
     <div class="main-container">
         <!-- ZÁPASY -->
         <section id="sect-matches" class="page-section active">
-            <h2 style="font-size: 12px; color: var(--neon-magenta); letter-spacing: 2px; margin-bottom: 20px;">// LIVE_NEURAL_FEED</h2>
+            <h2 style="font-size: 12px; color: var(--neon-magenta); letter-spacing: 2px; margin-bottom: 20px;">// NEURAL_FEED</h2>
             <div id="match-list-container"></div>
         </section>
 
         <!-- TIKETY -->
         <section id="sect-ticket" class="page-section">
-            <h2 style="font-size: 12px; color: var(--neon-cyan); letter-spacing: 2px; margin-bottom: 25px;">// STRATEGY_TOP_5</h2>
-            <div id="tickets-container">
-                <div style="text-align:center; opacity:0.4; padding:60px;">LOADING_TICKETS...</div>
-            </div>
+            <h2 style="font-size: 12px; color: var(--neon-cyan); letter-spacing: 2px; margin-bottom: 25px;">// TOP_5_STRATEGIES</h2>
+            <div id="tickets-container"></div>
         </section>
 
-        <!-- STATS -->
+        <!-- ŠTATISTIKY -->
         <section id="sect-stats" class="page-section">
             <h2 style="font-size: 12px; color: var(--neon-green); letter-spacing: 2px;">// PERFORMANCE</h2>
             <div class="cyber-card" style="text-align:center; padding: 50px; border-color: var(--neon-green);">
-                <span style="font-size:10px; opacity:0.5;">WIN_RATE_24H</span>
+                <span style="font-size:10px; opacity:0.5;">WIN_RATE</span>
                 <div style="font-size:45px; color:var(--neon-green); font-weight:900;">88.2%</div>
             </div>
         </section>
     </div>
 
-    <!-- DETAIL PANEL (OPRAVENÉ NA OVER) -->
+    <!-- DETAIL PANEL (OPRAVENÝ) -->
     <div id="detail-view">
-        <div onclick="closeMatch()" style="color:var(--neon-magenta); font-size:10px; margin-bottom:25px; cursor:pointer; font-weight:900;">[ BACK_TO_FEED ]</div>
-        <h2 id="det-title" style="text-align:center; font-size:17px; margin-bottom:30px;"></h2>
+        <div onclick="closeMatch()" style="color:var(--neon-magenta); font-size:10px; margin-bottom:25px; cursor:pointer;">[ BACK_TO_LIST ]</div>
+        <h2 id="det-title" style="text-align:center; font-size:16px; margin-bottom:30px;"></h2>
         
         <div class="stat-grid">
             <div class="stat-square"><span>OVER 1.5 GÓLU</span><b id="s1" style="color:var(--neon-yellow)">0%</b></div>
             <div class="stat-square"><span>OVER 2.5 GÓLU</span><b id="s2" style="color:var(--neon-magenta)">0%</b></div>
-            <div class="stat-square" style="grid-column: span 2; height: 70px;"><span>OBA TÍMY DAJÚ GÓL</span><b id="s3" style="color:var(--neon-green)">0%</b></div>
+            <div class="stat-square" style="grid-column: span 2; height: 70px;"><span>BTTS (OBA DAJÚ GÓL)</span><b id="s3" style="color:var(--neon-green)">0%</b></div>
             <div class="stat-square"><span>KARTY (OVER 3.5)</span><b id="s4" style="color:var(--neon-cyan)">0%</b></div>
             <div class="stat-square"><span>ROHY (OVER 7.5)</span><b id="s5" style="color:var(--neon-yellow)">0%</b></div>
         </div>
 
-        <div class="gpt-box">
-            <div style="font-size:9px; color:var(--neon-purple); margin-bottom:12px; font-weight:900;">> AI_TACTICAL_LOG:</div>
+        <div class="cyber-card" style="font-size: 11px; font-family: 'JetBrains Mono'; line-height:1.6; border-color: var(--neon-purple);">
+            <div style="color:var(--neon-purple); font-size:9px; margin-bottom:10px;">> AI_LOG:</div>
             <div id="det-gpt"></div>
         </div>
     </div>
@@ -98,6 +96,7 @@
 </div>
 
 <script>
+    // TVOJA KONFIGURÁCIA FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyBX-qBKbLfmBynXr4Bf1q5j4cXFyU9Dv0M",
         authDomain: "patoanalitik.firebaseapp.com",
@@ -114,10 +113,10 @@
         return d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
     }
 
-    function loadAll() {
+    function loadData() {
         const dnes = getDnes();
 
-        // 1. Zápasy
+        // Načítanie zápasov
         db.collection("zapasy").where("timestamp", "==", dnes).get().then(snap => {
             const container = document.getElementById('match-list-container');
             container.innerHTML = "";
@@ -126,12 +125,12 @@
                 const div = document.createElement('div');
                 div.className = "cyber-card match-row";
                 div.onclick = () => openMatch(m);
-                div.innerHTML = `<div><b>${m.zapas}</b><span>${m.liga} • ${m.cas}</span></div><div class="prob-badge">${m.o15}%</div>`;
+                div.innerHTML = `<div><b>${m.zapas}</b><br><small style="opacity:0.5">${m.liga} • ${m.cas}</small></div><div class="prob-badge">${m.o15}%</div>`;
                 container.appendChild(div);
             });
         });
 
-        // 2. Päť tiketov
+        // Načítanie 5 tiketov
         db.collection("denne_tikety").document(dnes).get().then(doc => {
             if (doc.exists) {
                 const container = document.getElementById('tickets-container');
@@ -140,11 +139,10 @@
                 tikety.forEach(t => {
                     const card = document.createElement('div');
                     card.className = "cyber-card";
-                    card.style.borderLeft = `4px solid ${t.id % 2 === 0 ? 'var(--neon-purple)' : 'var(--neon-magenta)'}`;
                     card.innerHTML = `
                         <div class="ticket-header">
-                            <span class="ticket-id">STRATEGY_#${t.id}</span>
-                            <span class="ticket-odds">ODDS: ${t.kurz}</span>
+                            <span class="ticket-id">STRATÉGIA #${t.id}</span>
+                            <span class="ticket-odds">KURZ: ${t.kurz}</span>
                         </div>
                         <div class="ticket-content">${t.zápasy}</div>
                     `;
@@ -156,15 +154,19 @@
 
     function openMatch(m) {
         document.getElementById('det-title').innerText = m.zapas;
-        document.getElementById('s1').innerText = m.o15 + "%";
-        document.getElementById('s2').innerText = m.o25 + "%";
-        document.getElementById('s3').innerText = m.btts + "%";
-        document.getElementById('s4').innerText = m.karty_prob + "%";
-        document.getElementById('s5').innerText = m.rohy_prob + "%";
-        document.getElementById('det-gpt').innerText = m.ai;
+        
+        // OPRAVA: Prepojenie na kľúče, ktoré posiela robot
+        document.getElementById('s1').innerText = (m.o15 || 0) + "%";
+        document.getElementById('s2').innerText = (m.o25 || 0) + "%";
+        document.getElementById('s3').innerText = (m.btts || 0) + "%";
+        document.getElementById('s4').innerText = (m.karty_prob || 0) + "%";
+        document.getElementById('s5').innerText = (m.rohy_prob || 0) + "%";
+        
+        document.getElementById('det-gpt').innerText = m.ai || "Prebieha hĺbková analýza dát...";
+        
         const v = document.getElementById('detail-view');
         v.style.display = 'block';
-        setTimeout(() => v.classList.add('open'), 15);
+        setTimeout(() => v.classList.add('open'), 10);
     }
 
     function closeMatch() {
@@ -180,7 +182,7 @@
         el.classList.add('active');
     }
 
-    loadAll();
+    loadData();
 </script>
 </body>
 </html>
