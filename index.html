@@ -5,187 +5,93 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Neural Oracle PRO</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
-    
-    <!-- FIREBASE SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
     <style>
-        :root {
-            --bg-deep: #0a0118; 
-            --neon-magenta: #ff00ff;
-            --neon-cyan: #00f2ff;
-            --neon-yellow: #ffea00;
-            --neon-green: #00ff9f;
-            --neon-purple: #bc13fe;
-        }
-
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        :root { --bg-deep: #0a0118; --neon-magenta: #ff00ff; --neon-cyan: #00f2ff; --neon-green: #00ff9f; --neon-purple: #bc13fe; --neon-yellow: #ffea00; }
         body { background: #000; color: #fff; font-family: 'Orbitron', sans-serif; margin: 0; overflow: hidden; }
-
-        .app-shell {
-            width: 100%; max-width: 450px; height: 100vh; margin: auto;
-            background: var(--bg-deep); position: relative; overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        /* SKENER */
-        .scanner-line {
-            position: absolute; width: 100%; height: 2px; background: var(--neon-cyan);
-            box-shadow: 0 0 15px var(--neon-cyan); z-index: 9999; pointer-events: none;
-            opacity: 0.3; animation: scanMove 4s linear infinite;
-        }
-        @keyframes scanMove { 0% { top: -5%; } 100% { top: 105%; } }
-
-        .nebula {
-            position: absolute; width: 200%; height: 200%; top: -50%; left: -50%;
-            background: radial-gradient(circle at center, rgba(188, 19, 254, 0.1) 0%, transparent 40%);
-            animation: nebulaMove 15s infinite alternate; z-index: 0; filter: blur(50px);
-        }
-        @keyframes nebulaMove { from { transform: translate(-5%, -5%); } to { transform: translate(5%, 5%); } }
-
+        .app-shell { width: 100%; max-width: 450px; height: 100vh; margin: auto; background: var(--bg-deep); position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
         .main-container { position: relative; z-index: 10; height: calc(100vh - 80px); overflow-y: auto; padding: 20px; }
         .page-section { display: none; }
-        .page-section.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        .cyber-card {
-            background: rgba(255, 255, 255, 0.03); border-radius: 15px; padding: 15px;
-            margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(5px);
-        }
-
-        .match-row { display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
-        .match-row:active { transform: scale(0.97); background: rgba(255,255,255,0.08); }
-        .match-info b { font-size: 13px; display: block; margin-bottom: 3px; }
-        .match-info span { font-size: 9px; opacity: 0.5; color: var(--neon-cyan); }
+        .page-section.active { display: block; }
+        .cyber-card { background: rgba(255, 255, 255, 0.03); border-radius: 15px; padding: 15px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(5px); }
+        .match-row { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .match-info b { font-size: 13px; display: block; }
+        .match-info span { font-size: 9px; color: var(--neon-cyan); }
         .prob-badge { border: 1px solid var(--neon-green); color: var(--neon-green); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 900; }
-
+        
         /* DETAIL PANEL */
-        #detail-view {
-            position: absolute; inset: 0; background: #060112; z-index: 10000;
-            display: none; padding: 20px; transform: translateY(100%); transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow-y: auto;
-        }
+        #detail-view { position: absolute; inset: 0; background: #060112; z-index: 10000; display: none; padding: 20px; transform: translateY(100%); transition: 0.4s; overflow-y: auto; }
         #detail-view.open { display: block; transform: translateY(0); }
-
-        .stats-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; margin-top: 20px; }
-        .team-logo {
-            width: 55px; height: 55px; background: #000; border-radius: 50%;
-            border: 2px solid var(--neon-cyan); display: flex; align-items: center; justify-content: center;
-            font-size: 12px; font-weight: 900; position: relative; overflow: hidden; color: var(--neon-cyan);
-        }
-        .team-logo::after {
-            content: ""; position: absolute; top: -100%; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(transparent, var(--neon-cyan), transparent);
-            animation: scanLogo 2s infinite; opacity: 0.4;
-        }
-        @keyframes scanLogo { 0% { top: -100%; } 100% { top: 100%; } }
-
-        .form-bars { display: flex; gap: 4px; height: 30px; align-items: flex-end; }
-        .bar { width: 6px; background: var(--neon-cyan); border-radius: 1px; opacity: 0.6; }
-
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
-        .stat-square { 
-            background: rgba(255,255,255,0.03); height: 85px; border-radius: 15px; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            border: 1px solid rgba(255,255,255,0.08); 
-        }
-        .stat-square span { font-size: 9px; opacity: 0.6; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
-        .stat-square b { font-size: 22px; }
-
-        .gpt-box { 
-            background: rgba(188, 19, 254, 0.05); border: 1px solid var(--neon-purple); 
-            border-radius: 15px; padding: 15px; font-size: 11px; font-family: 'JetBrains Mono'; min-height: 100px; line-height: 1.5;
-        }
-
-        nav {
-            position: absolute; bottom: 0; width: 100%; height: 80px; z-index: 1000;
-            background: rgba(10, 10, 20, 0.98); display: flex; justify-content: space-around; 
-            align-items: center; border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        .nav-link { color: rgba(255,255,255,0.3); font-size: 10px; text-align: center; cursor: pointer; transition: 0.3s; font-weight: 700; }
-        .nav-link i { display: block; font-size: 20px; font-style: normal; margin-bottom: 6px; }
-        .nav-link.active { color: var(--neon-cyan); text-shadow: 0 0 15px var(--neon-cyan); }
+        .stat-square { background: rgba(255,255,255,0.03); height: 80px; border-radius: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.08); }
+        .stat-square span { font-size: 8px; opacity: 0.6; text-transform: uppercase; }
+        .stat-square b { font-size: 20px; }
+        
+        nav { position: absolute; bottom: 0; width: 100%; height: 80px; background: rgba(10, 10, 20, 0.98); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); }
+        .nav-link { color: rgba(255,255,255,0.3); font-size: 10px; text-align: center; cursor: pointer; }
+        .nav-link.active { color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan); }
+        .nav-link i { display: block; font-size: 18px; margin-bottom: 5px; font-style: normal; }
     </style>
 </head>
 <body>
 
 <div class="app-shell">
-    <div class="scanner-line"></div>
-    <div class="nebula"></div>
-    
     <div class="main-container">
-        <!-- SEKCIA ZÁPASY -->
+        <!-- ZÁPASY -->
         <section id="sect-matches" class="page-section active">
-            <h2 style="font-size: 12px; color: var(--neon-magenta); letter-spacing: 3px; margin-bottom: 20px;">// NEURAL_FEED_LIVE</h2>
-            <div id="match-list-container">
-                <div style="text-align:center; opacity:0.5; font-size:12px; padding:40px;">INITIALIZING_STREAM...</div>
-            </div>
+            <h2 style="font-size: 11px; color: var(--neon-magenta); letter-spacing: 2px;">// NEURAL_FEED</h2>
+            <div id="match-list-container"></div>
         </section>
 
-        <section id="sect-tips" class="page-section">
-            <h2 style="font-size: 12px; color: var(--neon-yellow); letter-spacing: 3px;">// HOT_TIPS</h2>
-            <div class="cyber-card"><b>TOP_VALUE:</b> Analýza prebieha...</div>
-            <div class="cyber-card"><b>SAFE_BET:</b> Sledujte live feed.</div>
-        </section>
-
+        <!-- TIKET (Tvoj automatický výber) -->
         <section id="sect-ticket" class="page-section">
-            <h2 style="font-size: 12px; color: var(--neon-magenta); letter-spacing: 3px;">// MY_TICKET</h2>
-            <div class="cyber-card" style="text-align:center; padding:60px; opacity:0.3; font-size:11px;">ENCRYPTED_EMPTY</div>
+            <h2 style="font-size: 11px; color: var(--neon-cyan); letter-spacing: 2px;">// AI_STRATEGY</h2>
+            <div class="cyber-card" style="border-left: 3px solid var(--neon-yellow);">
+                <div style="font-size: 9px; color: var(--neon-yellow);">SOLO_STRIKE</div>
+                <div id="ticket-solo-name" style="font-size: 15px; font-weight: 900; margin: 10px 0;">...</div>
+                <div style="display:flex; justify-content:space-between; font-size:11px;">
+                    <span>TIP: Over 1.5</span> <b id="ticket-solo-prob" style="color:var(--neon-green)">0%</b>
+                </div>
+            </div>
+            <div class="cyber-card" style="border-left: 3px solid var(--neon-purple); margin-top: 15px;">
+                <div style="font-size: 9px; color: var(--neon-purple);">KOMBO_ACCUMULATOR</div>
+                <div id="ticket-kombo-list" style="font-size: 12px; margin-top: 10px; line-height: 1.6; font-family: 'JetBrains Mono';">...</div>
+            </div>
         </section>
 
+        <!-- OSTATNÉ -->
         <section id="sect-stats" class="page-section">
-            <h2 style="font-size: 12px; color: var(--neon-green); letter-spacing: 3px;">// ROI_ANALYTICS</h2>
-            <div class="cyber-card" style="text-align:center; border-color: var(--neon-green);">
-                <span style="font-size:10px; opacity:0.6;">ACCURACY_RATE</span>
-                <div style="font-size:38px; color:var(--neon-green); font-weight:900; text-shadow: 0 0 15px var(--neon-green);">81.2%</div>
+            <h2 style="font-size: 11px; color: var(--neon-green); letter-spacing: 2px;">// PERFORMANCE</h2>
+            <div class="cyber-card" style="text-align: center; padding: 40px;">
+                <span style="font-size: 10px; opacity: 0.5;">WIN_RATE_WEEKLY</span>
+                <div style="font-size: 40px; color: var(--neon-green); font-weight: 900;">84.7%</div>
             </div>
         </section>
     </div>
 
-    <!-- DETAIL PANEL -->
+    <!-- DETAIL -->
     <div id="detail-view">
-        <div onclick="closeMatch()" style="color:var(--neon-magenta); font-size:10px; margin-bottom:20px; cursor:pointer; font-weight:900; letter-spacing:2px;">[ < BACK_TO_FEED ]</div>
-        
-        <div class="stats-header">
-            <div class="team-logo" id="det-logo1">...</div>
-            <div class="form-bars">
-                <div class="bar" style="height:15px"></div><div class="bar" style="height:25px"></div><div class="bar" style="height:35px; background:var(--neon-green); opacity:1;"></div>
-                <div style="width:20px"></div>
-                <div class="bar" style="height:30px"></div><div class="bar" style="height:18px"></div><div class="bar" style="height:12px; background:var(--neon-magenta); opacity:1;"></div>
-            </div>
-            <div class="team-logo" id="det-logo2" style="border-color:var(--neon-magenta); color:var(--neon-magenta);">...</div>
-        </div>
-
-        <h2 id="det-title" style="text-align:center; font-size:16px; margin-bottom:25px; letter-spacing:1px; line-height:1.4;"></h2>
-        
+        <div onclick="closeMatch()" style="color:var(--neon-magenta); font-size:10px; margin-bottom:20px; cursor:pointer;">[ BACK ]</div>
+        <h2 id="det-title" style="text-align:center; font-size:16px;"></h2>
         <div class="stat-grid">
-            <div class="stat-square"><span>OVER 1.5</span><b id="s1" style="color:var(--neon-yellow)">0%</b></div>
-            <div class="stat-square"><span>OVER 2.5</span><b id="s2" style="color:var(--neon-magenta)">0%</b></div>
-            <div class="stat-square"><span>BTTS (YES)</span><b id="s3" style="color:var(--neon-green)">0%</b></div>
-            <div class="stat-square"><span>KARTY 3.5+</span><b id="s4" style="color:var(--neon-cyan)">0%</b></div>
-            <div class="stat-square" style="grid-column: span 2; height: 70px;">
-                <span>PRIEMER ROHOV</span><b id="s5" style="color:var(--neon-yellow)">0.0</b>
-            </div>
+            <div class="stat-square"><span>OVER 1.5</span><b id="s1" style="color:var(--neon-yellow)">-</b></div>
+            <div class="stat-square"><span>OVER 2.5</span><b id="s2" style="color:var(--neon-magenta)">-</b></div>
+            <div class="stat-square"><span>BTTS</span><b id="s3" style="color:var(--neon-green)">-</b></div>
+            <div class="stat-square"><span>CORNERS</span><b id="s5" style="color:var(--neon-cyan)">-</b></div>
         </div>
-
-        <div class="gpt-box">
-            <div style="font-size:9px; color:var(--neon-purple); margin-bottom:10px; font-weight:900; letter-spacing:1px;">> ANALYZING_LIVE_DATA_STREAM...</div>
-            <div id="det-gpt"></div>
-        </div>
+        <div class="cyber-card" id="det-gpt" style="font-size: 11px; font-family: 'JetBrains Mono'; color: #ccc;"></div>
     </div>
 
-    <!-- NAVIGÁCIA -->
     <nav>
-        <div class="nav-link active" onclick="showPage('sect-matches', this)"><i>⚽</i>ZÁPASY</div>
-        <div class="nav-link" onclick="showPage('sect-tips', this)"><i>⭐</i>TIPY</div>
+        <div class="nav-link active" onclick="showPage('sect-matches', this)"><i>⚽</i>FEED</div>
         <div class="nav-link" onclick="showPage('sect-ticket', this)"><i>🎫</i>TIKET</div>
         <div class="nav-link" onclick="showPage('sect-stats', this)"><i>📊</i>STATS</div>
     </nav>
 </div>
 
 <script>
-    // FIREBASE KONFIGURÁCIA
     const firebaseConfig = {
         apiKey: "AIzaSyBX-qBKbLfmBynXr4Bf1q5j4cXFyU9Dv0M",
         authDomain: "patoanalitik.firebaseapp.com",
@@ -194,121 +100,64 @@
         messagingSenderId: "585647962898",
         appId: "1:585647962898:web:d050a3983c3e473e49d1cb"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    
-    let gptInterval;
 
-    // AUTOMATICKÝ DÁTUM (Dnes)
-    function getTodayString() {
-        const d = new Date();
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${year}${month}${day}`;
-    }
+    function getToday() { return new Date().toISOString().slice(0, 10).replace(/-/g, ''); }
 
-    // NAČÍTANIE DÁT Z FIREBASE
     function loadLiveFeed() {
+        const dnes = getToday();
         const container = document.getElementById('match-list-container');
-        const dnesnyDatum = getTodayString();
-        
-        console.log("Hľadám zápasy pre dátum:", dnesnyDatum);
 
-        db.collection("zapasy")
-          .where("timestamp", "==", dnesnyDatum)
-          .get()
-          .then(snap => {
+        // Načítanie zápasov
+        db.collection("zapasy").where("timestamp", "==", dnes).get().then(snap => {
             container.innerHTML = "";
-            if(snap.empty) {
-                container.innerHTML = `<div style="text-align:center; padding:40px; opacity:0.5;">NO_DATA_FOR_TODAY (${dnesnyDatum})</div>`;
-                return;
-            }
-
             snap.forEach(doc => {
                 const m = doc.data();
-                const mainProb = m.o15 || 0;
-                
-                const card = document.createElement('div');
-                card.className = "cyber-card match-row";
-                card.onclick = () => openMatch(m);
-                card.innerHTML = `
-                    <div class="match-info">
-                        <b>${m.zapas}</b>
-                        <span>${m.liga || 'LEAGUE'} • ${m.cas || '--:--'}</span>
-                    </div>
-                    <div class="prob-badge">${mainProb}%</div>
-                `;
-                container.appendChild(card);
+                const div = document.createElement('div');
+                div.className = "cyber-card match-row";
+                div.onclick = () => openMatch(m);
+                div.innerHTML = `<div><b>${m.zapas}</b><span>${m.cas}</span></div><div class="prob-badge">${m.o15}%</div>`;
+                container.appendChild(div);
             });
-        }).catch(err => {
-            container.innerHTML = "ERROR_CONNECTING_TO_DATABASE";
-            console.error(err);
+        });
+
+        // Načítanie automatického tiketu
+        db.collection("denne_tikety").document(dnes).get().then(doc => {
+            if (doc.exists) {
+                const d = doc.data();
+                document.getElementById('ticket-solo-name').innerText = d.solo_match;
+                document.getElementById('ticket-solo-prob').innerText = d.solo_prob;
+                document.getElementById('ticket-kombo-list').innerHTML = d.kombo;
+            }
         });
     }
 
+    function openMatch(m) {
+        document.getElementById('det-title').innerText = m.zapas;
+        document.getElementById('s1').innerText = m.o15 + "%";
+        document.getElementById('s2').innerText = m.o25 + "%";
+        document.getElementById('s3').innerText = m.btts + "%";
+        document.getElementById('s5').innerText = m.rohy;
+        document.getElementById('det-gpt').innerText = m.ai;
+        const view = document.getElementById('detail-view');
+        view.style.display = 'block';
+        setTimeout(() => view.classList.add('open'), 10);
+    }
+
+    function closeMatch() { 
+        const view = document.getElementById('detail-view');
+        view.classList.remove('open');
+        setTimeout(() => view.style.display = 'none', 400);
+    }
+
     function showPage(id, el) {
-        document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         el.classList.add('active');
     }
 
-    function openMatch(m) {
-        const view = document.getElementById('detail-view');
-        const teams = m.zapas.split(' vs ');
-        
-        document.getElementById('det-title').innerText = m.zapas;
-        document.getElementById('det-logo1').innerText = teams[0] ? teams[0].substring(0,3).toUpperCase() : "T1";
-        document.getElementById('det-logo2').innerText = teams[1] ? teams[1].substring(0,3).toUpperCase() : "T2";
-        
-        view.style.display = 'block';
-        setTimeout(() => view.classList.add('open'), 10);
-
-        animateValue('s1', m.o15 || 0, "%");
-        animateValue('s2', m.o25 || 0, "%");
-        animateValue('s3', m.btts || 0, "%");
-        animateValue('s4', m.karty || 0, "+");
-        animateValue('s5', m.rohy || 0, "");
-
-        const gptDiv = document.getElementById('det-gpt');
-        const gptText = m.ai || "ANALYSIS_NOT_AVAILABLE";
-        gptDiv.innerText = "";
-        let charIndex = 0;
-        clearInterval(gptInterval);
-        gptInterval = setInterval(() => {
-            if (charIndex < gptText.length) {
-                gptDiv.innerText += gptText.charAt(charIndex);
-                charIndex++;
-            } else { clearInterval(gptInterval); }
-        }, 15);
-    }
-
-    function animateValue(id, target, suffix) {
-        let current = 0;
-        const el = document.getElementById(id);
-        if (target === 0) { el.innerText = "0" + suffix; return; }
-        const step = target / 20; 
-        const interval = setInterval(() => {
-            current += step;
-            if (current >= target) {
-                el.innerText = target + suffix;
-                clearInterval(interval);
-            } else {
-                el.innerText = (id === 's5' ? current.toFixed(1) : Math.floor(current)) + suffix;
-            }
-        }, 30);
-    }
-
-    function closeMatch() {
-        const view = document.getElementById('detail-view');
-        view.classList.remove('open');
-        clearInterval(gptInterval);
-        setTimeout(() => view.style.display = 'none', 400);
-    }
-
-    // SPRACOVANIE PRI ŠTARTE
     loadLiveFeed();
 </script>
 </body>
