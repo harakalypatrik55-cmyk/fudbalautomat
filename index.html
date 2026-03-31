@@ -119,16 +119,14 @@
         <section id="sect-matches" class="page-section active">
             <h2 style="font-size: 12px; color: var(--neon-magenta); letter-spacing: 3px; margin-bottom: 20px;">// NEURAL_FEED_LIVE</h2>
             <div id="match-list-container">
-                <!-- Tu sa načítajú dáta z Firebase -->
                 <div style="text-align:center; opacity:0.5; font-size:12px; padding:40px;">INITIALIZING_STREAM...</div>
             </div>
         </section>
 
-        <!-- OSTATNÉ SEKCIE -->
         <section id="sect-tips" class="page-section">
             <h2 style="font-size: 12px; color: var(--neon-yellow); letter-spacing: 3px;">// HOT_TIPS</h2>
-            <div class="cyber-card"><b>TOP_VALUE:</b> Výhra Domáci • Kurz 2.10</div>
-            <div class="cyber-card"><b>SAFE_BET:</b> Over 1.5 • Kurz 1.35</div>
+            <div class="cyber-card"><b>TOP_VALUE:</b> Analýza prebieha...</div>
+            <div class="cyber-card"><b>SAFE_BET:</b> Sledujte live feed.</div>
         </section>
 
         <section id="sect-ticket" class="page-section">
@@ -187,7 +185,7 @@
 </div>
 
 <script>
-    // TVOJ FIREBASE
+    // FIREBASE KONFIGURÁCIA
     const firebaseConfig = {
         apiKey: "AIzaSyBX-qBKbLfmBynXr4Bf1q5j4cXFyU9Dv0M",
         authDomain: "patoanalitik.firebaseapp.com",
@@ -200,24 +198,36 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     
-    // Zistíme dnešný dátum vo formáte YYYYMMDD
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     let gptInterval;
 
-    // NAČÍTANIE DÁT
+    // AUTOMATICKÝ DÁTUM (Dnes)
+    function getTodayString() {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}${month}${day}`;
+    }
+
+    // NAČÍTANIE DÁT Z FIREBASE
     function loadLiveFeed() {
         const container = document.getElementById('match-list-container');
+        const dnesnyDatum = getTodayString();
         
-        db.collection("zapasy").where("timestamp", "==", "20260330").get().then(snap => {
+        console.log("Hľadám zápasy pre dátum:", dnesnyDatum);
+
+        db.collection("zapasy")
+          .where("timestamp", "==", dnesnyDatum)
+          .get()
+          .then(snap => {
             container.innerHTML = "";
             if(snap.empty) {
-                container.innerHTML = '<div style="text-align:center; padding:40px; opacity:0.5;">NO_LIVE_DATA_FOUND</div>';
+                container.innerHTML = `<div style="text-align:center; padding:40px; opacity:0.5;">NO_DATA_FOR_TODAY (${dnesnyDatum})</div>`;
                 return;
             }
 
             snap.forEach(doc => {
                 const m = doc.data();
-                // Určíme badge percentá (použijeme Over 1.5 ako hlavné)
                 const mainProb = m.o15 || 0;
                 
                 const card = document.createElement('div');
@@ -232,6 +242,9 @@
                 `;
                 container.appendChild(card);
             });
+        }).catch(err => {
+            container.innerHTML = "ERROR_CONNECTING_TO_DATABASE";
+            console.error(err);
         });
     }
 
@@ -247,23 +260,20 @@
         const teams = m.zapas.split(' vs ');
         
         document.getElementById('det-title').innerText = m.zapas;
-        // Skratka tímu (prvé 3 písmená)
-        document.getElementById('det-logo1').innerText = teams[0].substring(0,3).toUpperCase();
-        document.getElementById('det-logo2').innerText = teams[1].substring(0,3).toUpperCase();
+        document.getElementById('det-logo1').innerText = teams[0] ? teams[0].substring(0,3).toUpperCase() : "T1";
+        document.getElementById('det-logo2').innerText = teams[1] ? teams[1].substring(0,3).toUpperCase() : "T2";
         
         view.style.display = 'block';
         setTimeout(() => view.classList.add('open'), 10);
 
-        // Animácia štatistík
-        animateValue('s1', m.o15, "%");
-        animateValue('s2', m.o25, "%");
-        animateValue('s3', m.btts, "%");
-        animateValue('s4', m.karty, "+");
-        animateValue('s5', m.rohy, "");
+        animateValue('s1', m.o15 || 0, "%");
+        animateValue('s2', m.o25 || 0, "%");
+        animateValue('s3', m.btts || 0, "%");
+        animateValue('s4', m.karty || 0, "+");
+        animateValue('s5', m.rohy || 0, "");
 
-        // GPT Písanie
         const gptDiv = document.getElementById('det-gpt');
-        const gptText = m.ai || "Initializing deep neural analysis of recent form and tactical patterns...";
+        const gptText = m.ai || "ANALYSIS_NOT_AVAILABLE";
         gptDiv.innerText = "";
         let charIndex = 0;
         clearInterval(gptInterval);
@@ -272,13 +282,14 @@
                 gptDiv.innerText += gptText.charAt(charIndex);
                 charIndex++;
             } else { clearInterval(gptInterval); }
-        }, 20);
+        }, 15);
     }
 
     function animateValue(id, target, suffix) {
         let current = 0;
         const el = document.getElementById(id);
-        const step = target / 30; 
+        if (target === 0) { el.innerText = "0" + suffix; return; }
+        const step = target / 20; 
         const interval = setInterval(() => {
             current += step;
             if (current >= target) {
@@ -287,7 +298,7 @@
             } else {
                 el.innerText = (id === 's5' ? current.toFixed(1) : Math.floor(current)) + suffix;
             }
-        }, 20);
+        }, 30);
     }
 
     function closeMatch() {
@@ -297,7 +308,7 @@
         setTimeout(() => view.style.display = 'none', 400);
     }
 
-    // Spustenie
+    // SPRACOVANIE PRI ŠTARTE
     loadLiveFeed();
 </script>
 </body>
